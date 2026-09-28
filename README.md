@@ -1,70 +1,32 @@
-# Getting Started with Create React App
+# Raavana Thalaigal Trust web app
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Vite and React version of the `WEB` application.
 
-## Available Scripts
+## Run locally
 
-In the project directory, you can run:
+```bash
+npm install
+npm run dev
+```
 
-### `npm start`
+## Environment configuration
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Edit `VITE_API_URL` in the appropriate file. Include `/api` in the base URL; login appends `/auth/login` automatically.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| File | Command | API URL |
+| --- | --- | --- |
+| `.env.development` | `npm run dev` | `http://localhost:5000/api` |
+| `.env.production` | `npm run build` | `https://raavanan-api.onrender.com/api` |
 
-### `npm test`
+To use the hosted API during development, replace the URL in `.env.development` with the hosted URL. Restart the development server after editing its environment file. Production values are embedded during the build, so run `npm run build` again after changing `.env.production`. `npm run preview` serves the existing production build.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+For personal overrides, use `.env.development.local` or `.env.production.local`; these are already ignored by Git. Set `VITE_RAZORPAY_KEY` to the public Razorpay key ID when enabling payments. All `VITE_` values are exposed to the browser, so do not put private keys or passwords in them.
 
-### `npm run build`
+## Project layout
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `src/pages/<PageName>/index.jsx`: one folder per page, including the admin page under `src/pages/admin`.
+- `src/components`: shared and feature components.
+- `src/services`: API and mock data services.
+- `src/asset`: imported images.
+- `public`: assets served directly by Vite.
+- `src/App.jsx`: routes and shared layout.

@@ -1,18 +1,10 @@
 const resolveApiBaseURL = () => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  const apiURL = import.meta.env.VITE_API_URL?.trim();
+  if (!apiURL) {
+    throw new Error('VITE_API_URL is missing. Set it in the environment file for the current Vite mode.');
   }
 
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-         return 'http://localhost:5000/api';
-        // return 'https://raavanan-api.onrender.com/api';
-
-    }
-  }
-
-  return 'https://raavanan-api.onrender.com/api';
+  return apiURL.replace(/\/+$/, '');
 };
 
 // API Configuration
@@ -93,7 +85,7 @@ const config = {
 
   // Payment configuration
   payment: {
-    razorpayKey: process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_mock_key',
+    razorpayKey: import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_mock_key',
     currency: 'INR',
     methods: ['card', 'upi', 'netbanking'],
     donationAmounts: {
