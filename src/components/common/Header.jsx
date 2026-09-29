@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiMenu, FiX, FiHome, FiHeart, FiCalendar, FiFileText,
-  FiUsers, FiMail, FiPhone, FiMapPin,
+  FiUsers, FiMail, FiPhone,
   FiUser, FiSettings, FiLogOut, FiChevronDown, FiBell,
   FiGrid, FiBookOpen, FiAward, FiMessageCircle, FiBarChart2, FiShield
 } from 'react-icons/fi';
@@ -10,6 +10,7 @@ import { FaUserFriends } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import ravanaLogo from '../../asset/image/ravanan.png';
 import apiService from '../../services/api';
+import Tooltip from './Tooltip';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') {
@@ -79,6 +80,7 @@ const Header = () => {
   useEffect(() => {
     setIsSidebarOpen(false);
     setIsUserMenuOpen(false);
+    document.body.style.overflow = 'unset';
     syncAuthState();
   }, [location]);
 
@@ -129,7 +131,7 @@ const Header = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+      <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 md:left-20 ${
         scrolled
           ? 'bg-[#fffaf1]/95 shadow-lg shadow-ink-950/5 backdrop-blur-xl'
           : 'bg-[#fffaf1]/72 backdrop-blur-xl'
@@ -139,13 +141,13 @@ const Header = () => {
             <div className="flex items-center">
               <button
                 onClick={toggleSidebar}
-                className="mr-4 rounded-lg p-2 text-ink-800 transition-colors hover:bg-white/70"
+                className="mr-4 rounded-lg p-2 text-ink-800 transition-colors hover:bg-white/70 md:hidden"
                 aria-label="Toggle menu"
               >
                 {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
               </button>
 
-              <Link to="/" className="flex items-center space-x-2">
+              <Link to="/" className="flex min-w-0 items-center space-x-2" aria-label="Raavana Thalaigal Trust home">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-1 ring-[#b36a12]/20 md:h-10 md:w-10">
                   <img
                     src={ravanaLogo}
@@ -153,7 +155,7 @@ const Header = () => {
                     className="block h-full w-full object-cover"
                   />
                 </div>
-                <span className="font-bold text-sm text-ink-950 md:text-xl">
+                <span className="truncate text-sm font-bold text-ink-950 sm:text-base md:text-xl">
                   Raavana Thalaigal Trust
                 </span>
               </Link>
@@ -213,79 +215,87 @@ const Header = () => {
         </div>
       </header>
 
-      {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" onClick={closeSidebar} />}
+      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity md:hidden" onClick={closeSidebar} />}
 
-      <aside className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed left-0 top-0 z-50 h-full w-20 transform bg-white shadow-xl transition-transform duration-300 ease-in-out md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
-          <div className="bg-[#201814] p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] shadow-lg shadow-black/20 ring-1 ring-[#f4c56b]/35">
+          <div className="relative flex items-center justify-center border-b border-gray-200 bg-white px-2 py-4">
+            <Tooltip label="Raavana Thalaigal Trust">
+              <Link to="/" onClick={closeSidebar} aria-label="Raavana Thalaigal Trust home">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gray-200">
                   <img
                     src={ravanaLogo}
                     alt="Raavana Thalaigal Trust logo"
                     className="block h-full w-full object-cover"
                   />
                 </div>
-                <div>
-                  <h2 className="text-white font-bold">Raavana Thalaigal Trust</h2>
-                  <p className="text-sm text-white/65">Empowering Communities</p>
-                </div>
-              </div>
-              <button onClick={closeSidebar} className="text-white hover:bg-primary-500 p-1 rounded"><FiX size={20} /></button>
-            </div>
+              </Link>
+            </Tooltip>
+            <button onClick={closeSidebar} className="absolute -right-3 top-1 h-7 w-7 rounded-full bg-white text-ink-800 shadow-md hover:bg-gray-100 md:hidden" aria-label="Close menu"><FiX className="mx-auto" size={16} /></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto py-4">
-            <div className="px-4 mb-6">
-              <nav className="space-y-1">
-                {sidebarNavItems.map((item) => (
-                  <Link key={item.path} to={item.path} className={`flex items-center px-4 py-3 rounded-lg transition-colors ${location.pathname === item.path ? 'bg-primary-50 text-primary-600' : 'text-gray-700 hover:bg-gray-100'}`} onClick={closeSidebar}>
-                    <item.icon className="mr-3" size={20} />
-                    <span>{item.name}</span>
+          <div className="flex-1 overflow-y-auto py-3">
+            <nav className="flex flex-col items-center gap-2 px-2">
+              {sidebarNavItems.map((item) => (
+                <Tooltip key={item.path} label={item.name}>
+                  <Link
+                    to={item.path}
+                    aria-label={item.name}
+                    className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${location.pathname === item.path ? 'bg-primary-600 text-white shadow-md shadow-primary-900/20' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'}`}
+                    onClick={closeSidebar}
+                  >
+                    <item.icon size={21} />
                   </Link>
-                ))}
-              </nav>
-            </div>
+                </Tooltip>
+              ))}
+            </nav>
 
             {isLoggedIn && userMenuItems.length > 0 && (
-              <div className="px-4 mb-6">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">My Account</h3>
-                <nav className="space-y-1">
-                  {userMenuItems.map((item) => (
-                    <Link key={item.path} to={item.path} className={`flex items-center px-4 py-3 rounded-lg transition-colors ${location.pathname === item.path ? 'bg-primary-50 text-primary-600' : 'text-gray-700 hover:bg-gray-100'}`} onClick={closeSidebar}>
-                      <item.icon className="mr-3" size={20} />
-                      <span>{item.name}</span>
+              <nav className="mx-2 mt-3 flex flex-col items-center gap-2 border-t border-gray-200 pt-3">
+                {userMenuItems.map((item) => (
+                  <Tooltip key={item.path} label={item.name}>
+                    <Link
+                      to={item.path}
+                      aria-label={item.name}
+                      className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${location.pathname === item.path ? 'bg-primary-600 text-white shadow-md shadow-primary-900/20' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700'}`}
+                      onClick={closeSidebar}
+                    >
+                      <item.icon size={21} />
                     </Link>
-                  ))}
-                  <button onClick={() => { handleLogout(); closeSidebar(); }} className="w-full flex items-center px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"><FiLogOut className="mr-3" size={20} /><span>Logout</span></button>
-                </nav>
-              </div>
+                  </Tooltip>
+                ))}
+                <Tooltip label="Logout">
+                  <button onClick={() => { handleLogout(); closeSidebar(); }} className="flex h-11 w-11 items-center justify-center rounded-full text-red-600 transition-colors hover:bg-red-50" aria-label="Logout">
+                    <FiLogOut size={21} />
+                  </button>
+                </Tooltip>
+              </nav>
             )}
 
             {!isLoggedIn && (
-              <div className="px-4 mb-6">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Actions</h3>
-                <div className="space-y-2">
-                  <Link to="/login" className="flex items-center justify-center px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors" onClick={closeSidebar}><FiUser className="mr-2" />Login / Sign Up</Link>
-                  <Link to="/donate" className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" onClick={closeSidebar}><FiHeart className="mr-2" />Donate Now</Link>
-                </div>
+              <div className="mx-2 mt-3 flex flex-col items-center gap-2 border-t border-gray-200 pt-3">
+                <Tooltip label="Login / Sign Up">
+                  <Link to="/login" aria-label="Login or sign up" className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white transition-colors hover:bg-primary-700" onClick={closeSidebar}>
+                    <FiUser size={21} />
+                  </Link>
+                </Tooltip>
+                <Tooltip label="Donate Now">
+                  <Link to="/donate" aria-label="Donate now" className="flex h-11 w-11 items-center justify-center rounded-full text-green-700 transition-colors hover:bg-green-50" onClick={closeSidebar}>
+                    <FiHeart size={21} />
+                  </Link>
+                </Tooltip>
               </div>
             )}
 
-            <div className="px-4 mt-auto">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-700 mb-2">Get in Touch</h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center"><FiPhone className="mr-2 text-primary-600" size={14} /><span>+91 94878 14418</span></div>                 
-                </div>
-              </div>
+            <div className="mx-2 mt-3 flex justify-center border-t border-gray-200 pt-3">
+              <Tooltip label="Call +91 94878 14418">
+                <a href="tel:+919487814418" aria-label="Call Raavana Thalaigal Trust" className="flex h-11 w-11 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-primary-50 hover:text-primary-700">
+                  <FiPhone size={21} />
+                </a>
+              </Tooltip>
             </div>
           </div>
 
-          <div className="p-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">2024 Raavana Thalaigal Trust. All rights reserved.</p>
-          </div>
         </div>
       </aside>
     </>

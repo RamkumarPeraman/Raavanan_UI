@@ -48,11 +48,12 @@ function AppLayout() {
   const hideFooter = location.pathname === '/messages';
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen">
       <ScrollToTop />
       <Header />
-      <main className="flex-grow">
-        <Routes>
+      <div className="flex min-h-screen flex-col md:ml-20 md:w-[calc(100%-5rem)]">
+        <main className="flex-grow">
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/donate" element={<DonationPage />} />
@@ -111,10 +112,11 @@ function AppLayout() {
               <RolesManagementPage />
             </ProtectedRoute>
           } />
-        </Routes>
-      </main>
-      {!hideFooter && <Footer />}
-      <ProjectChatbot />
+          </Routes>
+        </main>
+        {!hideFooter && <Footer />}
+        <ProjectChatbot />
+      </div>
       <ToastContainer position="top-right" autoClose={5000} />
     </div>
   );
