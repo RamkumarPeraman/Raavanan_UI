@@ -75,11 +75,11 @@ const ProjectsSummary = () => {
               Focus areas
             </div>
             <h2 className="text-reveal text-reveal-delay-1 mt-4 text-3xl font-bold text-ink-950 md:text-4xl">
-              Programs presented with the tone of a serious social institution.
+              Programs built around real community needs.
             </h2>
             <p className="text-reveal text-reveal-delay-2 mt-5 text-base leading-7 text-ink-700">
-              These cards now read as flagship initiatives rather than generic project tiles,
-              which is much closer to the reference style you asked for.
+              From education and health to livelihoods, each initiative connects volunteers,
+              local knowledge, and practical support where it matters most.
             </p>
           </div>
           <Link to="/projects" className="text-reveal text-reveal-delay-3 inline-flex items-center font-semibold text-primary-700">
@@ -149,7 +149,7 @@ const ProjectsSummary = () => {
 
         {loading && (
           <div className="mt-6 text-sm text-ink-500">
-            Loading live program data. Showing structured presentation either way.
+            Loading the latest program information…
           </div>
         )}
       </div>

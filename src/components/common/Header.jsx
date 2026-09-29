@@ -165,8 +165,16 @@ const Header = () => {
                   aria-label="Open account menu"
                   aria-expanded={isUserMenuOpen}
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-200 font-semibold text-primary-700">
-                    {user?.name?.charAt(0) || 'U'}
+                  <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary-200 font-semibold text-primary-700 ring-1 ring-primary-300/60">
+                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    {user?.profileImage && (
+                      <img
+                        src={user.profileImage}
+                        alt={`${user.name || 'User'} profile`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                      />
+                    )}
                   </span>
                   <FiChevronDown className="hidden text-ink-700 sm:block" size={16} />
                 </button>

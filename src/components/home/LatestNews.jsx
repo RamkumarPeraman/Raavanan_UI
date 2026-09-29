@@ -14,7 +14,7 @@ const fallbackStories = [
     id: 'story-1',
     title: 'How student mentoring changes confidence long before exam results appear',
     excerpt:
-      'A stronger homepage needs narrative proof. This story block is styled to foreground long-term transformation instead of simple announcements.',
+      'Mentoring gives students steady encouragement, trusted guidance, and the confidence to keep moving forward.',
     date: '2026-03-10',
     author: 'Editorial Team',
     category: 'Student Story',
@@ -23,7 +23,7 @@ const fallbackStories = [
     id: 'story-2',
     title: 'Why neighbourhood volunteers are central to sustainable educational support',
     excerpt:
-      'The Agaram-like reference leans on purpose and credibility. This layout does the same through editorial, readable cards.',
+      'Local volunteers turn shared responsibility into dependable learning support for children and families.',
     date: '2026-02-28',
     author: 'Community Desk',
     category: 'Field Update',
@@ -32,7 +32,7 @@ const fallbackStories = [
     id: 'story-3',
     title: 'From donor trust to visible outcomes: presenting impact with more discipline',
     excerpt:
-      'A social-impact homepage should communicate seriousness. These updates are framed with that institutional tone.',
+      'Clear reporting connects every contribution with the people, programs, and outcomes it helps support.',
     date: '2026-02-12',
     author: 'Program Office',
     category: 'Impact Note',
@@ -94,11 +94,11 @@ const LatestNews = () => {
               Stories and updates
             </div>
             <h2 className="text-reveal text-reveal-delay-1 mt-4 text-3xl font-bold md:text-4xl">
-              Editorial blocks that feel more credible and human.
+              Stories of people, progress, and community action.
             </h2>
             <p className="text-reveal text-reveal-delay-2 mt-5 text-base leading-7 text-white/60">
-              This section now supports the homepage with narrative depth, which is an important
-              part of the reference style you pointed to.
+              Follow field updates, volunteer experiences, and the milestones shaping our work
+              across communities.
             </p>
           </div>
           <Link to="/blogs" className="text-reveal text-reveal-delay-3 inline-flex items-center font-semibold text-accent-300">

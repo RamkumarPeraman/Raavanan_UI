@@ -14,7 +14,7 @@ const fallbackTestimonials = [
     name: 'Volunteer Mentor',
     role: 'Education volunteer',
     content:
-      'This revised homepage now communicates the same seriousness we try to bring to the field: disciplined, hopeful, and focused on outcomes.',
+      'Working together gives every effort more meaning. We can see how steady support becomes confidence, opportunity, and hope.',
     rating: 5,
   },
 ];
@@ -61,11 +61,11 @@ const Testimonials = () => {
               Voices from the field
             </div>
             <h2 className="text-reveal text-reveal-delay-1 mt-4 text-3xl font-bold text-ink-950 md:text-4xl">
-              A homepage for a foundation should feel personal, but grounded.
+              Change is strongest when the community carries it together.
             </h2>
             <p className="text-reveal text-reveal-delay-2 mt-5 max-w-xl text-base leading-7 text-ink-700">
-              The testimonial section now supports that balance with cleaner typography and more
-              breathing room, instead of looking like a generic carousel card.
+              Students, families, and volunteers share how consistent support creates trust,
+              confidence, and opportunities that continue beyond a single event.
             </p>
           </div>
 

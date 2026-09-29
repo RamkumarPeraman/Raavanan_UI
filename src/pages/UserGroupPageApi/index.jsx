@@ -29,6 +29,24 @@ const normalizeRole = (role) => {
   return aliases[role.trim().toUpperCase()] || role.trim().toLowerCase();
 };
 
+const UserAvatar = ({ user, size = 'large' }) => {
+  const sizeClass = size === 'small' ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base';
+
+  return (
+    <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100 font-bold text-primary-700 ring-1 ring-primary-200 ${sizeClass}`}>
+      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+      {user.profileImage && (
+        <img
+          src={user.profileImage}
+          alt={`${user.name || 'User'} profile`}
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(event) => { event.currentTarget.style.display = 'none'; }}
+        />
+      )}
+    </div>
+  );
+};
+
 const UserGroupPageApi = () => {
   const [currentUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
   const [availableRoles, setAvailableRoles] = useState(roles); // default to hardcoded
@@ -145,9 +163,7 @@ const UserGroupPageApi = () => {
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold">
-                  {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
+                <UserAvatar user={user} />
                 <div>
                   <div className="font-semibold">{user.name}</div>
                   <div className="text-sm text-gray-500">{user.email}</div>
@@ -187,7 +203,12 @@ const UserGroupPageApi = () => {
         <tbody className="bg-white divide-y divide-gray-200">
           {users.map((user) => (
             <tr key={user.id || user._id}>
-              <td className="px-6 py-4"><div className="font-medium">{user.name}</div><div className="text-sm text-gray-500">{user.email}</div></td>
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <UserAvatar user={user} size="small" />
+                  <div><div className="font-medium">{user.name}</div><div className="text-sm text-gray-500">{user.email}</div></div>
+                </div>
+              </td>
               <td className="px-6 py-4">{availableRoles[user.role]?.name || user.role}</td>
               <td className="px-6 py-4">{user.department || '-'}</td>
               <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{user.status}</span></td>

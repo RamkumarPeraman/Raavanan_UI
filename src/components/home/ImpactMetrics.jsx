@@ -48,7 +48,7 @@ const ImpactMetrics = () => {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
           <div>
             <h2 className="text-reveal text-reveal-delay-1 mt-4 text-3xl font-bold text-ink-950 md:text-4xl">
-              Trust is built through clarity, not decoration.
+              Consistent action creates lasting community impact.
             </h2>
             <div className="text-reveal text-reveal-delay-2 mt-6 flex flex-col gap-3 sm:flex-row">
               <a
