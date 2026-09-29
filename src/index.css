@@ -38,7 +38,8 @@
 
 @layer components {
   .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    /* Keep page sections fluid when zooming out increases the CSS viewport. */
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
   }
   
   .btn-primary {
