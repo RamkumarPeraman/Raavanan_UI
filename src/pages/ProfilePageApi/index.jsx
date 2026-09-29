@@ -9,7 +9,6 @@ import {
   FiLogOut,
   FiMail,
   FiMapPin,
-  FiPhone,
   FiSave,
   FiShield,
   FiTrash2,
@@ -167,6 +166,15 @@ const ProfilePageApi = () => {
 
   const getInitials = (name) => (name || 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
   const formatDate = (dateString) => (dateString ? new Date(dateString).toLocaleDateString('en-IN') : 'Not set');
+  const roleLabel = (user.role || 'member').replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const fieldClassName = 'w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100 disabled:border-transparent disabled:bg-ink-50 disabled:text-ink-700';
+
+  const profileStats = [
+    { label: 'Volunteer hours', value: stats.volunteerHours || 0, icon: FiUsers, colors: 'bg-primary-50 text-primary-700' },
+    { label: 'Events attended', value: stats.eventsAttended || 0, icon: FiCalendar, colors: 'bg-blue-50 text-blue-700' },
+    { label: 'Total donated', value: `₹${Number(stats.totalDonated || 0).toLocaleString('en-IN')}`, icon: FiHeart, colors: 'bg-rose-50 text-rose-700' },
+    { label: 'Impact score', value: stats.impactScore || 0, icon: FiAward, colors: 'bg-amber-50 text-amber-700' },
+  ];
 
   if (loading) {
     return (
@@ -177,159 +185,155 @@ const ProfilePageApi = () => {
   }
 
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-      <div className="container-custom space-y-8">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="h-36 bg-gradient-to-r from-primary-700 via-primary-600 to-orange-500" />
-          <div className="px-6 pb-6 -mt-16">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-              <div className="flex flex-col md:flex-row md:items-end gap-5">
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-full border-4 border-white bg-primary-100 overflow-hidden shadow-lg">
-                    {formData.profileImage ? (
-                      <img src={formData.profileImage} alt={formData.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-primary-700">
-                        {getInitials(formData.name)}
-                      </div>
-                    )}
-                  </div>
-                  {isEditing && (
-                    <label className="absolute bottom-2 right-2 bg-white rounded-full shadow p-2 cursor-pointer">
-                      <FiEdit2 />
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
-                  )}
-                </div>
-
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-                  <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                    <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700">{user.role}</span>
-                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700">{user.membershipType}</span>
-                    <span className="px-3 py-1 rounded-full bg-green-100 text-green-700">Member since {formatDate(user.joinDate)}</span>
-                  </div>
-                  <p className="mt-3 text-gray-600 max-w-2xl">{user.bio || 'Add a short bio to complete your profile.'}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {(user.role === 'admin' || user.role === 'super_admin') && (
-                  <Link to="/my-groups" className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-                    <FiUsers className="inline mr-2" />
-                    Manage Users
-                  </Link>
-                )}
-                {!isEditing ? (
-                  <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700">
-                    <FiEdit2 className="inline mr-2" />
-                    Edit Profile
-                  </button>
+    <div className="min-h-screen bg-[#f4f7f6] pb-16 pt-24">
+      <div className="container-custom mx-auto max-w-[1500px] space-y-6">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_22px_60px_-38px_rgba(20,26,32,0.45)]">
+          <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-primary-700 via-primary-500 to-accent-500" />
+          <div className="grid gap-6 p-6 pt-8 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:p-8 lg:pt-10">
+            <div className="relative w-fit">
+              <div className="h-28 w-28 overflow-hidden rounded-[2rem] bg-primary-50 ring-4 ring-primary-50 md:h-32 md:w-32">
+                {formData.profileImage ? (
+                  <img src={formData.profileImage} alt={formData.name} className="h-full w-full object-cover" />
                 ) : (
-                  <>
-                    <button onClick={handleSaveProfile} disabled={saving} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
-                      <FiSave className="inline mr-2" />
-                      Save
-                    </button>
-                    <button onClick={() => { setFormData(user); setIsEditing(false); }} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-                      <FiX className="inline mr-2" />
-                      Cancel
-                    </button>
-                  </>
+                  <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-primary-700">
+                    {getInitials(formData.name)}
+                  </div>
                 )}
-                <button onClick={handleLogout} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-                  <FiLogOut className="inline mr-2" />
-                  Logout
+              </div>
+              {isEditing && (
+                <label className="absolute -bottom-2 -right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-primary-700 text-white shadow-lg transition hover:bg-primary-800" aria-label="Change profile picture">
+                  <FiEdit2 />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-3xl font-bold text-ink-950 md:text-4xl">{user.name || 'Member'}</h2>
+                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary-700">{roleLabel}</span>
+              </div>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-ink-600">{user.bio || 'Add a short bio so the community can get to know you better.'}</p>
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-500">
+                <span className="inline-flex items-center gap-2"><FiShield className="text-primary-600" />{user.membershipType || 'Regular Member'}</span>
+                <span className="inline-flex items-center gap-2"><FiCalendar className="text-primary-600" />Member since {formatDate(user.joinDate)}</span>
+                <span className="inline-flex items-center gap-2"><FiMapPin className="text-primary-600" />{user.location || user.address?.city || 'Location not added'}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 lg:max-w-xs lg:justify-end">
+              {!isEditing ? (
+                <button onClick={() => setIsEditing(true)} className="inline-flex items-center justify-center rounded-full bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-800">
+                  <FiEdit2 className="mr-2" />Edit Profile
                 </button>
+              ) : (
+                <>
+                  <button onClick={handleSaveProfile} disabled={saving} className="inline-flex items-center justify-center rounded-full bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-800 disabled:opacity-50">
+                    <FiSave className="mr-2" />{saving ? 'Saving…' : 'Save Changes'}
+                  </button>
+                  <button onClick={() => { setFormData(user); setIsEditing(false); }} className="inline-flex items-center justify-center rounded-full border border-ink-200 px-4 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50">
+                    <FiX className="mr-2" />Cancel
+                  </button>
+                </>
+              )}              
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {profileStats.map((item) => (
+            <div key={item.label} className="flex items-center gap-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(20,26,32,0.55)]">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.colors}`}>
+                <item.icon size={22} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-ink-950">{item.value}</div>
+                <div className="text-sm text-ink-500">{item.label}</div>
               </div>
             </div>
-          </div>
-        </div>
+          ))}
+        </section>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow p-5 text-center">
-            <FiUsers className="mx-auto text-primary-600 mb-2" />
-            <div className="text-2xl font-bold">{stats.volunteerHours || 0}</div>
-            <div className="text-sm text-gray-500">Volunteer Hours</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-5 text-center">
-            <FiCalendar className="mx-auto text-blue-600 mb-2" />
-            <div className="text-2xl font-bold">{stats.eventsAttended || 0}</div>
-            <div className="text-sm text-gray-500">Events Attended</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-5 text-center">
-            <FiHeart className="mx-auto text-rose-600 mb-2" />
-            <div className="text-2xl font-bold">{stats.totalDonated || 0}</div>
-            <div className="text-sm text-gray-500">Total Donated</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-5 text-center">
-            <FiAward className="mx-auto text-amber-600 mb-2" />
-            <div className="text-2xl font-bold">{stats.impactScore || 0}</div>
-            <div className="text-sm text-gray-500">Impact Score</div>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl shadow p-6 space-y-5">
-            <h2 className="text-xl font-semibold">Basic Information</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <input name="name" value={formData.name || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Full Name" className="p-3 border rounded-lg disabled:bg-gray-50" />
-              <input name="email" value={formData.email || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Email" className="p-3 border rounded-lg disabled:bg-gray-50" />
-              <input name="phone" value={formData.phone || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Phone" className="p-3 border rounded-lg disabled:bg-gray-50" />
-              <input name="location" value={formData.location || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Location" className="p-3 border rounded-lg disabled:bg-gray-50" />
-              <input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleInputChange} disabled={!isEditing} className="p-3 border rounded-lg disabled:bg-gray-50" />
-              <input name="gender" value={formData.gender || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Gender" className="p-3 border rounded-lg disabled:bg-gray-50" />
+        <div className="grid gap-6 xl:grid-cols-12">
+          <section className="rounded-[1.75rem] border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-38px_rgba(20,26,32,0.5)] md:p-7 xl:col-span-7">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-ink-950">Personal information</h2>
+              <p className="mt-1 text-sm text-ink-500">Your core profile and contact details.</p>
             </div>
-            <textarea name="bio" rows="4" value={formData.bio || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Bio" className="w-full p-3 border rounded-lg disabled:bg-gray-50" />
-          </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Full name<input name="name" value={formData.name || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Full name" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Email address<input type="email" name="email" value={formData.email || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Email address" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Phone number<input name="phone" value={formData.phone || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Phone number" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Location<input name="location" value={formData.location || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Location" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Date of birth<input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleInputChange} disabled={!isEditing} className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Gender<input name="gender" value={formData.gender || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Gender" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700 md:col-span-2">About you<textarea name="bio" rows="4" value={formData.bio || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Write a short bio" className={fieldClassName} /></label>
+            </div>
+          </section>
 
-          <div className="bg-white rounded-2xl shadow p-6 space-y-5">
-            <h2 className="text-xl font-semibold">Contact and Address</h2>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3"><FiMail className="mt-1 text-primary-600" /><div><div className="text-sm text-gray-500">Email</div><div>{user.email || 'Not set'}</div></div></div>
-              <div className="flex items-start gap-3"><FiPhone className="mt-1 text-primary-600" /><div><div className="text-sm text-gray-500">Phone</div><div>{user.phone || 'Not set'}</div></div></div>
-              <div className="flex items-start gap-3">
-                <FiMapPin className="mt-1 text-primary-600" />
-                <div className="w-full grid md:grid-cols-2 gap-4">
-                  <input name="address.street" value={formData.address?.street || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Street" className="p-3 border rounded-lg disabled:bg-gray-50" />
-                  <input name="address.city" value={formData.address?.city || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="City" className="p-3 border rounded-lg disabled:bg-gray-50" />
-                  <input name="address.state" value={formData.address?.state || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="State" className="p-3 border rounded-lg disabled:bg-gray-50" />
-                  <input name="address.pincode" value={formData.address?.pincode || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Pincode" className="p-3 border rounded-lg disabled:bg-gray-50" />
-                </div>
+          <section className="rounded-[1.75rem] border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-38px_rgba(20,26,32,0.5)] md:p-7 xl:col-span-5">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-ink-950">Address & membership</h2>
+              <p className="mt-1 text-sm text-ink-500">Where you are based and your member record.</p>
+            </div>
+            <div className="mb-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-primary-50 p-4">
+                <FiMail className="text-primary-700" />
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-ink-500">Email</p>
+                <p className="mt-1 break-all text-sm font-semibold text-ink-800">{user.email || 'Not set'}</p>
               </div>
-              <div className="flex items-start gap-3"><FiShield className="mt-1 text-primary-600" /><div><div className="text-sm text-gray-500">Membership</div><div>{user.membershipType} ({user.membershipId || 'Pending'})</div></div></div>
+              <div className="rounded-2xl bg-accent-50 p-4">
+                <FiShield className="text-accent-700" />
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-ink-500">Membership ID</p>
+                <p className="mt-1 text-sm font-semibold text-ink-800">{user.membershipId || 'Pending'}</p>
+              </div>
             </div>
-          </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="space-y-2 text-sm font-semibold text-ink-700 sm:col-span-2">Street address<input name="address.street" value={formData.address?.street || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Street address" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">City<input name="address.city" value={formData.address?.city || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="City" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">State<input name="address.state" value={formData.address?.state || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="State" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Pincode<input name="address.pincode" value={formData.address?.pincode || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Pincode" className={fieldClassName} /></label>
+              <label className="space-y-2 text-sm font-semibold text-ink-700">Country<input name="address.country" value={formData.address?.country || ''} onChange={handleInputChange} disabled={!isEditing} placeholder="Country" className={fieldClassName} /></label>
+            </div>
+          </section>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl shadow p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Security</h2>
-              <button onClick={() => setShowPasswordSection((prev) => !prev)} className="text-primary-600 hover:text-primary-700">
-                <FiKey className="inline mr-2" />
-                Change Password
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-[1.75rem] border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-38px_rgba(20,26,32,0.5)] md:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-ink-950">Password & security</h2>
+                <p className="mt-1 text-sm text-ink-500">Keep your account protected with a strong password.</p>
+              </div>
+              <button onClick={() => setShowPasswordSection((prev) => !prev)} className="inline-flex items-center rounded-full bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700 transition hover:bg-primary-100">
+                <FiKey className="mr-2" />{showPasswordSection ? 'Close' : 'Change password'}
               </button>
             </div>
             {showPasswordSection && (
-              <div className="space-y-3">
-                <input type="password" placeholder="Current password" value={passwordData.currentPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, currentPassword: e.target.value }))} className="w-full p-3 border rounded-lg" />
-                <input type="password" placeholder="New password" value={passwordData.newPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))} className="w-full p-3 border rounded-lg" />
-                <input type="password" placeholder="Confirm new password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))} className="w-full p-3 border rounded-lg" />
-                <button onClick={handlePasswordChange} disabled={saving} className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">Update Password</button>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <input type="password" placeholder="Current password" value={passwordData.currentPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, currentPassword: e.target.value }))} className={`${fieldClassName} sm:col-span-2`} />
+                <input type="password" placeholder="New password" value={passwordData.newPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))} className={fieldClassName} />
+                <input type="password" placeholder="Confirm new password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))} className={fieldClassName} />
+                <button onClick={handlePasswordChange} disabled={saving} className="w-fit rounded-full bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-800 disabled:opacity-50">Update password</button>
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="bg-white rounded-2xl shadow p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-red-600">Danger Zone</h2>
-            <p className="text-sm text-gray-600">Delete your account permanently. This action cannot be undone.</p>
-            <input type="password" placeholder="Enter password to confirm" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="w-full p-3 border rounded-lg" />
-            <button onClick={handleDeleteAccount} disabled={saving} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
-              <FiTrash2 className="inline mr-2" />
-              Delete Account
-            </button>
-          </div>
+          <section className="rounded-[1.75rem] border border-red-100 bg-red-50/50 p-6 md:p-7">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700"><FiTrash2 /></div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-2xl font-bold text-red-800">Delete account</h2>
+                <p className="mt-1 text-sm leading-6 text-red-700/75">Permanently remove your account and profile data. This action cannot be undone.</p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <input type="password" placeholder="Enter password to confirm" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100" />
+                  <button onClick={handleDeleteAccount} disabled={saving} className="inline-flex items-center justify-center rounded-xl bg-red-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-50">
+                    <FiTrash2 className="mr-2" />Delete account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
