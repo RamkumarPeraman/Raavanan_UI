@@ -211,8 +211,7 @@ const UserGroupPageApi = () => {
       <div className="container-custom">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">User Management</h1>
-            <p className="text-gray-600">All member data is loaded from the API and stored in PostgreSQL.</p>
+            <h1 className="text-3xl font-bold">User Management</h1>            
           </div>
           {canEdit && <button onClick={() => openPopup('add')} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"><FiPlus className="inline mr-2" />Add User</button>}
         </div>
