@@ -59,7 +59,7 @@ const BUILT_IN_FAQS = [
     id: 'contact',
     question: 'How do I contact the team?',
     answer:
-      'You can reach the team from the Contact page. The site also shows the main contact details in the sidebar, including email and Chennai location.',
+      'You can reach the team from the Contact page in the main navigation. The site footer also lists the phone number, email address, and Coimbatore office location.',
     cta: { label: 'Open Contact Page', path: '/contact' },
     keywords: ['contact', 'email', 'phone', 'reach', 'address', 'location'],
   },

@@ -51,7 +51,7 @@ function AppLayout() {
     <div className="min-h-screen">
       <ScrollToTop />
       <Header />
-      <div className="flex min-h-screen flex-col md:ml-20 md:w-[calc(100%-5rem)]">
+      <div className="flex min-h-screen w-full flex-col">
         <main className="flex-grow">
           <Routes>
           {/* Public Routes */}
