@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
 import loginPageImage from '../../asset/image/loginPage.jpg';
 
 const LoginPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(() => new URLSearchParams(location.search).get('mode') !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -130,15 +131,16 @@ const LoginPage = () => {
         role = 'donor';
       }
 
-      await apiService.signup({
+      const response = await apiService.requestSignupOtp({
         name: signupData.name,
         email: signupData.email,
         password: signupData.password,
         role,
       });
 
-      toast.success('Registration successful! Welcome to Raavana Thalaigal Trust!');
-      navigate('/profile');
+      sessionStorage.setItem('signupVerificationEmail', response.email || signupData.email);
+      toast.success(response.message || 'Verification code sent to your email');
+      navigate('/verify-signup', { state: { email: response.email || signupData.email } });
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Registration failed. Please try again.');
     } finally {

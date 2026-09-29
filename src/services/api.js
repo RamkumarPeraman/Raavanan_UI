@@ -589,6 +589,33 @@ const apiService = {
     }
   },
 
+  requestSignupOtp: async (userData) => {
+    try {
+      const response = await api.post('/auth/signup/request-otp', userData);
+      return response.data;
+    } catch (error) {
+      throwApiError(error);
+    }
+  },
+
+  verifySignupOtp: async (email, otp) => {
+    try {
+      const response = await api.post('/auth/signup/verify-otp', { email, otp });
+      return persistAuth(response.data, response.data.user?.role || 'member');
+    } catch (error) {
+      throwApiError(error);
+    }
+  },
+
+  resendSignupOtp: async (email) => {
+    try {
+      const response = await api.post('/auth/signup/resend-otp', { email });
+      return response.data;
+    } catch (error) {
+      throwApiError(error);
+    }
+  },
+
   forgotPassword: async (email) => {
     try {
         const response = await api.post('/auth/forgot-password', { email });

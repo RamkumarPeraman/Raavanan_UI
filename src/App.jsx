@@ -17,6 +17,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import SignupOtpPage from './pages/SignupOtpPage';
 import BlogsMediaPage from './pages/BlogsMediaPage';
 import EventsPage from './pages/EventsPageApi';
 import ProfilePage from './pages/ProfilePageApi';
@@ -44,7 +45,7 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const hideFooter = ['/login', '/forgot-password', '/messages'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages'].includes(location.pathname);
 
   return (
     <div className="min-h-screen">
@@ -61,6 +62,7 @@ function AppLayout() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-signup" element={<SignupOtpPage />} />
           <Route path="/blogs" element={<BlogsMediaPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
