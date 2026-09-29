@@ -35,9 +35,6 @@ const navigationItems = [
   { name: 'Projects', path: '/projects' },
   { name: 'Events', path: '/events' },
   { name: 'Volunteer', path: '/volunteer' },
-  { name: 'Blogs & Media', path: '/blogs' },
-  { name: 'Reports', path: '/reports' },
-  { name: 'Contact', path: '/contact' },
 ];
 
 const Header = () => {
@@ -117,7 +114,7 @@ const Header = () => {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-800 transition-colors hover:bg-white/80 xl:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-800 transition-colors hover:bg-white/80 md:hidden"
             aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={isMobileMenuOpen}
           >
@@ -128,17 +125,17 @@ const Header = () => {
             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-1 ring-[#b36a12]/20 md:h-11 md:w-11">
               <img src={ravanaLogo} alt="Raavana Thalaigal Trust logo" className="block h-full w-full object-cover" />
             </div>
-            <span className="max-w-[9rem] truncate text-sm font-bold text-ink-950 sm:max-w-none sm:text-base md:text-xl">
+            <span className="max-w-[9rem] truncate text-sm font-bold text-ink-950 sm:max-w-[12rem] sm:text-base lg:max-w-none lg:text-xl">
               Raavana Thalaigal Trust
             </span>
           </Link>
 
-          <nav className="ml-auto hidden items-center gap-1 xl:flex" aria-label="Main navigation">
+          <nav className="ml-auto hidden items-center md:flex lg:gap-1" aria-label="Main navigation">
             {navigationItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-full px-2 py-2 text-sm font-semibold transition-colors lg:px-3 ${
                   isActive(item.path)
                     ? 'bg-primary-100 text-primary-800'
                     : 'text-ink-700 hover:bg-white/80 hover:text-primary-700'
@@ -149,14 +146,14 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 xl:ml-3">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-2 lg:ml-3">
             <Link
               to="/donate"
               className="flex h-10 items-center justify-center rounded-full bg-primary-700 px-3 font-semibold text-white transition-colors hover:bg-primary-800 md:px-5"
               aria-label="Donate now"
             >
-              <FiHeart className="sm:hidden" size={19} />
-              <span className="hidden sm:inline">Donate Now</span>
+              <FiHeart className="lg:hidden" size={19} />
+              <span className="hidden lg:inline">Donate Now</span>
             </Link>
 
             {isLoggedIn ? (
@@ -199,22 +196,31 @@ const Header = () => {
             ) : (
               <Link to="/login" className="flex h-10 items-center gap-1 rounded-full px-2 text-ink-800 transition-colors hover:bg-white/80 sm:px-3">
                 <FiUser size={18} />
-                <span className="hidden md:inline">Login</span>
+                <span className="hidden lg:inline">Login</span>
               </Link>
             )}
           </div>
         </div>
       </div>
 
-      <div className={`overflow-hidden border-t border-ink-100 bg-white/95 transition-all duration-300 xl:hidden ${
-        isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 border-transparent opacity-0'
+      {isMobileMenuOpen && (
+        <button
+          type="button"
+          className="fixed inset-x-0 bottom-0 top-16 bg-ink-950/35 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-label="Close navigation"
+        />
+      )}
+
+      <aside className={`fixed bottom-0 left-0 top-16 w-72 max-w-[85vw] border-r border-ink-100 bg-white p-4 shadow-2xl transition-transform duration-300 md:hidden ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <nav className="container-custom grid grid-cols-2 gap-2 py-4 sm:grid-cols-3" aria-label="Mobile navigation">
+        <nav className="space-y-2" aria-label="Mobile navigation">
           {navigationItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`block rounded-xl px-4 py-3 font-semibold transition-colors ${
                 isActive(item.path)
                   ? 'bg-primary-100 text-primary-800'
                   : 'text-ink-700 hover:bg-primary-50 hover:text-primary-700'
@@ -224,7 +230,7 @@ const Header = () => {
             </Link>
           ))}
         </nav>
-      </div>
+      </aside>
     </header>
   );
 };
