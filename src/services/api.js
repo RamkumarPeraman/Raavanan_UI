@@ -103,7 +103,11 @@ const emitAuthChange = () => {
   }
 };
 
-const throwApiError = (error, fallbackMessage) => {
+const throwApiError = (error) => {
+  if (error.code === 'ECONNABORTED') {
+    throw new Error('The server is taking longer than expected to respond. Please try again in a moment.');
+  }
+
   if (!error.response) {
     throw new Error('API server is not reachable. Check ' + api.defaults.baseURL);
   }
@@ -591,7 +595,7 @@ const apiService = {
 
   requestSignupOtp: async (userData) => {
     try {
-      const response = await api.post('/auth/signup/request-otp', userData);
+      const response = await api.post('/auth/signup/request-otp', userData, { timeout: 60000 });
       return response.data;
     } catch (error) {
       throwApiError(error);
