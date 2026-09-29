@@ -44,7 +44,7 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const hideFooter = location.pathname === '/messages';
+  const hideFooter = ['/login', '/forgot-password', '/messages'].includes(location.pathname);
 
   return (
     <div className="min-h-screen">

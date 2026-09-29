@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiPhone } from 'react-icons/fi';
+import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
-import ravanaLogo from '../../asset/image/ravanan.png';
+import loginPageImage from '../../asset/image/loginPage.jpg';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,7 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const [loginData, setLoginData] = useState({ email: '', password: '', rememberMe: false });
-  const [signupData, setSignupData] = useState({ name: '', email: '', password: '', confirmPassword: '', phone: '', agreeTerms: false });
+  const [signupData, setSignupData] = useState({ name: '', email: '', password: '', confirmPassword: '', agreeTerms: false });
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, hasLower: false, hasUpper: false, hasNumber: false, hasSpecial: false, isLongEnough: false });
 
   const handleLoginChange = (e) => {
@@ -133,7 +133,6 @@ const LoginPage = () => {
       await apiService.signup({
         name: signupData.name,
         email: signupData.email,
-        phone: signupData.phone,
         password: signupData.password,
         role,
       });
@@ -155,115 +154,110 @@ const LoginPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-primary-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-600 rounded-full mb-4 shadow-lg">
-            <img src={ravanaLogo} alt="" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-gray-900">{isLogin ? 'Welcome Back!' : 'Join Our Community'}</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button onClick={() => setIsLogin(!isLogin)} className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
-              {isLogin ? 'Sign up here' : 'Login here'}
-            </button>
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#f4f7f6] pt-16 lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:min-h-0 lg:overflow-hidden lg:pt-0">
+      <div className="grid min-h-[calc(100vh-4rem)] lg:h-full lg:min-h-0 lg:grid-cols-[60%_40%]">
+        <section className="relative min-h-[260px] overflow-hidden lg:min-h-0">
+          <img
+            src={loginPageImage}
+            alt="Young volunteers working together"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </section>
 
+        <section className="flex h-full items-center justify-center px-5 py-8 sm:px-8 lg:px-7 lg:py-6 xl:px-10">
+          <div className="w-full max-w-md">
+            <h1 className="mb-6 text-2xl font-bold text-ink-950 md:text-3xl">{isLogin ? 'Sign In' : 'Create Account'}</h1>
         {isLogin ? (
-          <form onSubmit={handleLogin} className="bg-white shadow-xl rounded-lg px-8 pt-6 pb-8 mb-4">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">Email Address</label>
+          <form onSubmit={handleLogin}>
+            <div className="mb-3">
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="email">Email Address</label>
               <div className="relative">
                 <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="email" type="email" name="email" value={loginData.email} onChange={handleLoginChange} className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Enter your email" required />
+                <input id="email" type="email" name="email" value={loginData.email} onChange={handleLoginChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Enter your email" required />
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Password</label>
+            <div className="mb-5">
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="password">Password</label>
               <div className="relative">
                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="password" type={showPassword ? 'text' : 'password'} name="password" value={loginData.password} onChange={handleLoginChange} className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Enter your password" required />
+                <input id="password" type={showPassword ? 'text' : 'password'} name="password" value={loginData.password} onChange={handleLoginChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Enter your password" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">{showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}</button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-5 flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
                 <input type="checkbox" name="rememberMe" checked={loginData.rememberMe} onChange={handleLoginChange} className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
-                <span className="ml-2 text-sm text-gray-700">Remember me</span>
+                <span className="ml-2 text-xs text-gray-700">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500 transition-colors">Forgot password?</Link>
+              <Link to="/forgot-password" className="text-xs text-primary-600 transition-colors hover:text-primary-500">Forgot password?</Link>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200">{loading ? 'Logging in...' : 'Login'}</button>
+            <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Logging in...' : 'Login'}</button>
           </form>
         ) : (
-          <form onSubmit={handleSignup} className="bg-white shadow-xl rounded-lg px-8 pt-6 pb-8 mb-4">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">Full Name</label>
+          <form onSubmit={handleSignup} className="space-y-3.5">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="name">Full Name</label>
               <div className="relative">
                 <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="name" type="text" name="name" value={signupData.name} onChange={handleSignupChange} className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Enter your full name" required />
+                <input id="name" type="text" name="name" value={signupData.name} onChange={handleSignupChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Enter your full name" required />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-email">Email Address</label>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="signup-email">Email Address</label>
               <div className="relative">
                 <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="signup-email" type="email" name="email" value={signupData.email} onChange={handleSignupChange} className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Enter your email" required />
+                <input id="signup-email" type="email" name="email" value={signupData.email} onChange={handleSignupChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Enter your email" required />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">Phone Number</label>
-              <div className="relative">
-                <FiPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="phone" type="tel" name="phone" value={signupData.phone} onChange={handleSignupChange} className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Enter your phone number" />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-password">Password</label>
-              <div className="relative">
-                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="signup-password" type={showPassword ? 'text' : 'password'} name="password" value={signupData.password} onChange={handleSignupChange} className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Create a password" required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">{showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}</button>
-              </div>
-              {signupData.password && (
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="signup-password">Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input id="signup-password" type={showPassword ? 'text' : 'password'} name="password" value={signupData.password} onChange={handleSignupChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Create password" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}</button>
+                </div>
+                {signupData.password && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
                       <div className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`} style={{ width: `${(passwordStrength.score / 5) * 100}%` }}></div>
                     </div>
-                    <span className="text-xs ml-2 font-medium">{getPasswordStrengthText()}</span>
+                    <span className="text-[11px] font-medium">{getPasswordStrengthText()}</span>
                   </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="confirm-password">Confirm Password</label>
-              <div className="relative">
-                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={signupData.confirmPassword} onChange={handleSignupChange} className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 transition-all" placeholder="Confirm your password" required />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">{showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}</button>
+                )}
               </div>
-              {signupData.confirmPassword && signupData.password !== signupData.confirmPassword && <p className="text-xs text-red-600 mt-1">Passwords do not match</p>}
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="confirm-password">Confirm Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={signupData.confirmPassword} onChange={handleSignupChange} className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200" placeholder="Confirm password" required />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}>{showConfirmPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}</button>
+                </div>
+                {signupData.confirmPassword && signupData.password !== signupData.confirmPassword && <p className="mt-1 text-[11px] text-red-600">Passwords do not match</p>}
+              </div>
             </div>
 
-            <div className="mb-6">
-              <label className="flex items-start cursor-pointer">
-                <input type="checkbox" name="agreeTerms" checked={signupData.agreeTerms} onChange={handleSignupChange} className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mt-1 cursor-pointer" required />
-                <span className="ml-2 text-sm text-gray-700">I agree to the <Link to="/terms" className="text-primary-600 hover:text-primary-500">Terms of Service</Link> and <Link to="/privacy" className="text-primary-600 hover:text-primary-500">Privacy Policy</Link></span>
-              </label>
-            </div>
+            <label className="flex cursor-pointer items-start">
+              <input type="checkbox" name="agreeTerms" checked={signupData.agreeTerms} onChange={handleSignupChange} className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500" required />
+              <span className="ml-2 text-xs leading-5 text-gray-700">I agree to the <Link to="/terms" className="text-primary-600 hover:text-primary-500">Terms of Service</Link> and <Link to="/privacy" className="text-primary-600 hover:text-primary-500">Privacy Policy</Link></span>
+            </label>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200">{loading ? 'Creating account...' : 'Sign Up'}</button>
+            <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Creating account...' : 'Sign Up'}</button>
           </form>
         )}
+            <div className="mt-5 text-center">
+              <button onClick={() => setIsLogin(!isLogin)} className="rounded-full px-4 py-2 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-50 hover:text-primary-800">
+                {isLogin ? 'Create new account' : 'Back to login'}
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

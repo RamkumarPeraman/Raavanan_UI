@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  FiMail, FiLock, FiArrowLeft, FiCheckCircle, 
-  FiAlertCircle, FiEye, FiEyeOff, FiKey,
-  FiSmartphone, FiMessageSquare
-} from 'react-icons/fi';
+import { FiMail, FiLock, FiArrowLeft, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
+import loginPageImage from '../../asset/image/loginPage.jpg';
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -263,283 +260,169 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-primary-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Back to Login Link */}
-        <Link 
-          to="/login" 
-          className="inline-flex items-center text-sm text-gray-600 hover:text-primary-600 mb-6 transition-colors"
-        >
-          <FiArrowLeft className="mr-2" />
-          Back to Login
-        </Link>
+    <div className="min-h-screen bg-[#f4f7f6] pt-16 lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:min-h-0 lg:overflow-hidden lg:pt-0">
+      <div className="grid min-h-[calc(100vh-4rem)] lg:h-full lg:min-h-0 lg:grid-cols-[60%_40%]">
+        <section className="relative min-h-[260px] overflow-hidden lg:min-h-0">
+          <img
+            src={loginPageImage}
+            alt="Young volunteers working together"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </section>
 
-        {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-          {/* Header with Progress Steps */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6">
-            <h2 className="text-2xl font-bold text-white mb-2">{getStepTitle()}</h2>
-            <p className="text-primary-100 text-sm">{getStepDescription()}</p>
-            
-            {/* Progress Steps */}
-            <div className="flex items-center justify-between mt-6">
+        <section className="flex h-full items-center justify-center px-5 py-8 sm:px-8 lg:px-7 lg:py-6 xl:px-10">
+          <div className="w-full max-w-md">
+            <Link to="/login" className="mb-5 inline-flex items-center text-xs font-medium text-gray-600 transition-colors hover:text-primary-600">
+              <FiArrowLeft className="mr-2" />
+              Back to Login
+            </Link>
+
+            <h1 className="text-2xl font-bold text-ink-950 md:text-3xl">{getStepTitle()}</h1>
+            <p className="mt-2 text-sm leading-6 text-gray-600">{getStepDescription()}</p>
+
+            <div className="my-6 flex items-center" aria-label={`Password reset step ${step} of 3`}>
               {[1, 2, 3].map((s) => (
-                <div key={s} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    step >= s 
-                      ? 'bg-white text-primary-600' 
-                      : 'bg-primary-500 text-white'
-                  }`}>
-                    {step > s ? <FiCheckCircle /> : s}
+                <React.Fragment key={s}>
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${step >= s ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                    {step > s ? <FiCheckCircle size={15} /> : s}
                   </div>
-                  {s < 3 && (
-                    <div className={`w-12 h-1 mx-2 ${
-                      step > s ? 'bg-white' : 'bg-primary-500'
-                    }`} />
-                  )}
-                </div>
+                  {s < 3 && <div className={`mx-2 h-0.5 flex-1 ${step > s ? 'bg-primary-600' : 'bg-gray-200'}`} />}
+                </React.Fragment>
               ))}
             </div>
-          </div>
 
-          <div className="p-8">
-            {/* Step 1: Email Form */}
             {step === 1 && (
-              <form onSubmit={handleEmailSubmit} className="space-y-6">
+              <form onSubmit={handleEmailSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="reset-email">Email Address</label>
                   <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
+                      id="reset-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200"
                       placeholder="Enter your registered email"
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    We'll send a verification code to this email address.
-                  </p>
+                  <p className="mt-1.5 text-xs text-gray-500">We'll send a verification code to this email address.</p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? 'Sending...' : 'Send Verification Code'}
                 </button>
               </form>
             )}
 
-            {/* Step 2: OTP Verification */}
             {step === 2 && (
-              <form onSubmit={handleOTPSubmit} className="space-y-6">
+              <form onSubmit={handleOTPSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-                    Enter 6-digit verification code
-                  </label>
-                  <div className="flex justify-center space-x-2">
+                  <label className="mb-3 block text-xs font-semibold text-gray-700">Enter 6-digit verification code</label>
+                  <div className="grid grid-cols-6 gap-2">
                     {otp.map((digit, index) => (
                       <input
                         key={index}
                         id={`otp-${index}`}
                         type="text"
+                        inputMode="numeric"
                         maxLength="1"
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-12 h-12 text-center text-lg font-semibold border-2 border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                        className="h-11 min-w-0 rounded-lg border border-gray-300 text-center text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200"
+                        aria-label={`Verification code digit ${index + 1}`}
                       />
                     ))}
                   </div>
-
-                  {/* Resend Option */}
-                  <div className="text-center mt-4">
+                  <div className="mt-3 text-center">
                     {canResend ? (
-                      <button
-                        type="button"
-                        onClick={handleResendOTP}
-                        className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                      >
-                        Resend Code
-                      </button>
+                      <button type="button" onClick={handleResendOTP} className="text-xs font-semibold text-primary-600 hover:text-primary-700">Resend Code</button>
                     ) : (
-                      <p className="text-sm text-gray-500">
-                        Resend code in {timer} seconds
-                      </p>
+                      <p className="text-xs text-gray-500">Resend code in {timer} seconds</p>
                     )}
                   </div>
-
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading || otp.join('').length !== 6}
-                  className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={loading || otp.join('').length !== 6} className="btn-primary w-full py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </form>
             )}
 
-            {/* Step 3: New Password */}
             {step === 3 && (
-              <form onSubmit={handlePasswordReset} className="space-y-6">
-                {/* New Password */}
+              <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New Password
-                  </label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="new-password">New Password</label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
+                      id="new-password"
                       type={passwordData.showNew ? 'text' : 'password'}
                       name="newPassword"
                       value={passwordData.newPassword}
                       onChange={handlePasswordChange}
-                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200"
                       placeholder="Enter new password"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setPasswordData(prev => ({ ...prev, showNew: !prev.showNew }))}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {passwordData.showNew ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    <button type="button" onClick={() => setPasswordData(prev => ({ ...prev, showNew: !prev.showNew }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={passwordData.showNew ? 'Hide password' : 'Show password'}>
+                      {passwordData.showNew ? <FiEyeOff size={17} /> : <FiEye size={17} />}
                     </button>
                   </div>
-
-                  {/* Password Strength Indicator */}
                   {passwordData.newPassword && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
-                            style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs ml-2 font-medium">
-                          {getPasswordStrengthText()}
-                        </span>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+                        <div className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`} style={{ width: `${(passwordStrength.score / 5) * 100}%` }}></div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <span className={passwordStrength.isLongEnough ? 'text-green-600' : 'text-gray-400'}>
-                          ✓ 8+ characters
-                        </span>
-                        <span className={passwordStrength.hasLower ? 'text-green-600' : 'text-gray-400'}>
-                          ✓ Lowercase
-                        </span>
-                        <span className={passwordStrength.hasUpper ? 'text-green-600' : 'text-gray-400'}>
-                          ✓ Uppercase
-                        </span>
-                        <span className={passwordStrength.hasNumber ? 'text-green-600' : 'text-gray-400'}>
-                          ✓ Number
-                        </span>
-                        <span className={passwordStrength.hasSpecial ? 'text-green-600' : 'text-gray-400'}>
-                          ✓ Special character
-                        </span>
-                      </div>
+                      <span className="text-[11px] font-medium">{getPasswordStrengthText()}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Confirm Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New Password
-                  </label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="confirm-new-password">Confirm New Password</label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
+                      id="confirm-new-password"
                       type={passwordData.showConfirm ? 'text' : 'password'}
                       name="confirmPassword"
                       value={passwordData.confirmPassword}
                       onChange={handlePasswordChange}
-                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200"
                       placeholder="Confirm new password"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setPasswordData(prev => ({ ...prev, showConfirm: !prev.showConfirm }))}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {passwordData.showConfirm ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    <button type="button" onClick={() => setPasswordData(prev => ({ ...prev, showConfirm: !prev.showConfirm }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={passwordData.showConfirm ? 'Hide confirmed password' : 'Show confirmed password'}>
+                      {passwordData.showConfirm ? <FiEyeOff size={17} /> : <FiEye size={17} />}
                     </button>
                   </div>
                   {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
-                    <p className="text-xs text-red-600 mt-2 flex items-center">
-                      <FiAlertCircle className="mr-1" />
-                      Passwords do not match
-                    </p>
+                    <p className="mt-1 flex items-center text-[11px] text-red-600"><FiAlertCircle className="mr-1" />Passwords do not match</p>
                   )}
                 </div>
 
-                {/* Password Requirements Summary */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</h4>
-                  <ul className="space-y-1 text-xs text-gray-600">
-                    <li className="flex items-center">
-                      <FiCheckCircle className={`mr-2 ${passwordStrength.isLongEnough ? 'text-green-600' : 'text-gray-400'}`} size={12} />
-                      At least 8 characters long
-                    </li>
-                    <li className="flex items-center">
-                      <FiCheckCircle className={`mr-2 ${passwordStrength.hasLower && passwordStrength.hasUpper ? 'text-green-600' : 'text-gray-400'}`} size={12} />
-                      Mix of uppercase and lowercase letters
-                    </li>
-                    <li className="flex items-center">
-                      <FiCheckCircle className={`mr-2 ${passwordStrength.hasNumber ? 'text-green-600' : 'text-gray-400'}`} size={12} />
-                      At least one number
-                    </li>
-                    <li className="flex items-center">
-                      <FiCheckCircle className={`mr-2 ${passwordStrength.hasSpecial ? 'text-green-600' : 'text-gray-400'}`} size={12} />
-                      At least one special character (!@#$%^&*)
-                    </li>
-                  </ul>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-lg bg-white/70 p-3 text-[11px] text-gray-500">
+                  <span className={passwordStrength.isLongEnough ? 'text-green-600' : ''}>✓ 8+ characters</span>
+                  <span className={passwordStrength.hasLower ? 'text-green-600' : ''}>✓ Lowercase</span>
+                  <span className={passwordStrength.hasUpper ? 'text-green-600' : ''}>✓ Uppercase</span>
+                  <span className={passwordStrength.hasNumber ? 'text-green-600' : ''}>✓ Number</span>
+                  <span className={passwordStrength.hasSpecial ? 'text-green-600' : ''}>✓ Special character</span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? 'Resetting...' : 'Reset Password'}
                 </button>
               </form>
             )}
 
-            {/* Help Links */}
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-sm text-gray-600">
-                Remember your password?{' '}
-                <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-                  Sign in
-                </Link>
-              </p>
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
-                  Sign up
-                </Link>
-              </p>
+            <div className="mt-5 text-center">
+              <Link to="/login" className="rounded-full px-4 py-2 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-50 hover:text-primary-800">Sign in</Link>
             </div>
           </div>
-        </div>
-
-        {/* Security Note */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500 flex items-center justify-center">
-            <FiLock className="mr-1" />
-            Your information is protected by 256-bit SSL encryption
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );
