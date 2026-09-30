@@ -622,7 +622,7 @@ const apiService = {
 
   forgotPassword: async (email) => {
     try {
-        const response = await api.post('/auth/forgot-password', { email });
+        const response = await api.post('/auth/forgot-password', { email }, { timeout: 60000 });
         return response.data;
     } catch (error) {
         throwApiError(error);
@@ -638,9 +638,9 @@ const apiService = {
     }
   },
 
-  resetPassword: async (email, newPassword) => {
+  resetPassword: async (email, newPassword, resetToken) => {
     try {
-        const response = await api.post('/auth/reset-password', { email, newPassword });
+        const response = await api.post('/auth/reset-password', { email, newPassword, resetToken });
         return response.data;
     } catch (error) {
         throwApiError(error);

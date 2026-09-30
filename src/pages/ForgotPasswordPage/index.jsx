@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { FiMail, FiLock, FiArrowLeft, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '../../components/ui/input-otp';
 import apiService from '../../services/api';
 import loginPageImage from '../../asset/image/loginPage.jpg';
 
@@ -10,7 +12,8 @@ const ForgotPasswordPage = () => {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [passwordData, setPasswordData] = useState({
     newPassword: '',
     confirmPassword: '',
@@ -62,8 +65,7 @@ const ForgotPasswordPage = () => {
   const handleOTPSubmit = async (e) => {
     e.preventDefault();
     
-    const otpValue = otp.join('');
-    if (otpValue.length !== 6) {
+    if (otp.length !== 6) {
       toast.error('Please enter complete 6-digit OTP');
       return;
     }
@@ -71,7 +73,8 @@ const ForgotPasswordPage = () => {
     setLoading(true);
 
     try {
-      await apiService.verifyOtp(email, otpValue);
+      const response = await apiService.verifyOtp(email, otp);
+      setResetToken(response.resetToken);
       toast.success('OTP verified successfully!');
       setStep(3);
     } catch (error) {
@@ -109,53 +112,13 @@ const ForgotPasswordPage = () => {
     setLoading(true);
 
     try {
-      await apiService.resetPassword(email, passwordData.newPassword);
+      await apiService.resetPassword(email, passwordData.newPassword, resetToken);
       toast.success('Password reset successfully!');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      navigate('/login', { replace: true });
     } catch (error) {
       toast.error(error.message || 'Failed to reset password');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Handle OTP input change
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedOtp = value.slice(0, 6).split('');
-      const newOtp = [...otp];
-      pastedOtp.forEach((char, i) => {
-        if (i < 6) newOtp[i] = char;
-      });
-      setOtp(newOtp);
-      
-      // Focus last filled input or next empty
-      const lastFilledIndex = Math.min(pastedOtp.length - 1, 5);
-      const nextInput = document.getElementById(`otp-${lastFilledIndex + 1}`);
-      if (nextInput) {
-        nextInput.focus();
-      }
-    } else {
-      // Handle single character
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-
-      // Auto-focus next input
-      if (value && index < 5) {
-        document.getElementById(`otp-${index + 1}`).focus();
-      }
-    }
-  };
-
-  // Handle OTP key press
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      // Focus previous input on backspace if current is empty
-      document.getElementById(`otp-${index - 1}`).focus();
     }
   };
 
@@ -320,22 +283,27 @@ const ForgotPasswordPage = () => {
               <form onSubmit={handleOTPSubmit} className="space-y-5">
                 <div>
                   <label className="mb-3 block text-xs font-semibold text-gray-700">Enter 6-digit verification code</label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength="1"
-                        value={digit}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="h-11 min-w-0 rounded-lg border border-gray-300 text-center text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200"
-                        aria-label={`Verification code digit ${index + 1}`}
-                      />
-                    ))}
-                  </div>
+                  <InputOTP
+                    maxLength={6}
+                    pattern={REGEXP_ONLY_DIGITS}
+                    value={otp}
+                    onChange={setOtp}
+                    disabled={loading}
+                    autoFocus
+                    containerClassName="justify-center"
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
                   <div className="mt-3 text-center">
                     {canResend ? (
                       <button type="button" onClick={handleResendOTP} className="text-xs font-semibold text-primary-600 hover:text-primary-700">Resend Code</button>
@@ -345,7 +313,7 @@ const ForgotPasswordPage = () => {
                   </div>
                 </div>
 
-                <button type="submit" disabled={loading || otp.join('').length !== 6} className="btn-primary w-full py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="submit" disabled={loading || otp.length !== 6} className="btn-primary w-full py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </form>
