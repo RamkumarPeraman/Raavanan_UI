@@ -178,6 +178,31 @@ api.interceptors.response.use(
 );
 
 const apiService = {
+  getAdminContentPage: async (type, params = {}) => {
+    const paths = {
+      projects: '/projects',
+      events: '/events',
+      blogs: '/blogs',
+      reports: '/reports',
+      volunteer: '/volunteer-opportunities',
+      volunteerApplications: '/volunteers',
+      donations: '/donations',
+    };
+    const path = paths[type];
+    if (!path) throw new Error(`Unknown admin content type: ${type}`);
+    try {
+      const response = await api.get(path, {
+        params: { ...params, ...(type === 'volunteer' ? { includeInactive: true } : {}) },
+      });
+      const normalize = type === 'projects' ? normalizeProject : normalizeEntity;
+      return {
+        items: extractListData(response.data).map(normalize),
+        totalRowCount: response.data?.totalRowCount,
+      };
+    } catch (error) {
+      throwApiError(error);
+    }
+  },
   createDonation: async (donationData) => {
     try {
       const response = await api.post('/donations', donationData);

@@ -9,6 +9,7 @@ import { FaRupeeSign } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import ContentPopup from '../../../components/admin/ContentPopup';
+import Pagination from '../../../components/common/Pagination';
 import apiService, { defaultBankDetails, defaultHeroNewsCarousel } from '../../../services/api';
 
 const contentTypes = [
@@ -361,12 +362,19 @@ const AdminDashboardPage = () => {
     volunteer: [], volunteerApplications: [], donations: [],
   });
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalsByType, setTotalsByType] = useState({});
+  const [summaryByType, setSummaryByType] = useState({});
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [volunteerFilter, setVolunteerFilter] = useState('all');
-  const [donationStatusFilter, setDonationStatusFilter] = useState('all');
+  const [donationStatusFilter, setDonationStatusFilter] = useState('pending');
   const [screenshotModal, setScreenshotModal] = useState(null);
   const [volunteerModalMode, setVolunteerModalMode] = useState(null);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
@@ -387,8 +395,57 @@ const AdminDashboardPage = () => {
   const qrFileRef = useRef(null);
 
   useEffect(() => {
-    loadAllContent();
-  }, []);
+    const timeout = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const countFor = async (type, status) => {
+      const result = await apiService.getAdminContentPage(type, { page: 1, pageSize: 1, status });
+      return result.totalRowCount || 0;
+    };
+    const countedTypes = contentTypes.filter((type) => type.popupType || ['volunteerApplications', 'donations'].includes(type.id));
+    Promise.all([
+      Promise.allSettled(countedTypes.map(async (type) => [type.id, await countFor(type.id)])),
+      Promise.allSettled(['pending', 'approved', 'rejected'].map(async (status) => [status, await countFor('volunteerApplications', status)])),
+      Promise.allSettled(['pending', 'accepted', 'rejected'].map(async (status) => [status, await countFor('donations', status)])),
+      apiService.getDonationStats().catch(() => null),
+    ]).then(([countResults, volunteerResults, donationResults, donationStats]) => {
+      if (cancelled) return;
+      const fulfilled = (results) => results.filter((result) => result.status === 'fulfilled').map((result) => result.value);
+      const totals = Object.fromEntries(fulfilled(countResults));
+      setTotalsByType((previous) => ({ ...previous, ...totals }));
+      setSummaryByType({
+        volunteerApplications: { total: totals.volunteerApplications, ...Object.fromEntries(fulfilled(volunteerResults)) },
+        donations: { total: totals.donations, ...Object.fromEntries(fulfilled(donationResults)), totalAmount: donationStats?.data?.acceptedAmount || 0 },
+      });
+    }).catch(() => { if (!cancelled) toast.error('Failed to load dashboard counts'); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (activeTab === 'donationSettings' || activeTab === 'homepageCarousel') return undefined;
+    let cancelled = false;
+    setLoading(true);
+    const params = { page, pageSize, search: debouncedSearch || undefined };
+    if (activeTab === 'volunteerApplications' && volunteerFilter !== 'all') params.status = volunteerFilter;
+    if (activeTab === 'donations' && donationStatusFilter !== 'all') params.status = donationStatusFilter;
+    apiService.getAdminContentPage(activeTab, params).then((result) => {
+      if (cancelled) return;
+      const nextTotal = result.totalRowCount || 0;
+      const lastPage = Math.max(1, Math.ceil(nextTotal / pageSize));
+      if (page > lastPage) { setPage(lastPage); return; }
+      setItemsByType((previous) => ({ ...previous, [activeTab]: result.items }));
+      setTotalItems(nextTotal);
+      if (!debouncedSearch && volunteerFilter === 'all' && donationStatusFilter === 'all') {
+        setTotalsByType((previous) => ({ ...previous, [activeTab]: nextTotal }));
+      }
+    }).catch((error) => {
+      if (!cancelled) toast.error(error.message || 'Failed to load dashboard content');
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab, page, pageSize, debouncedSearch, volunteerFilter, donationStatusFilter, refreshKey]);
 
   useEffect(() => {
     if (activeTab === 'donationSettings' || activeTab === 'homepageCarousel') {
@@ -496,51 +553,8 @@ const AdminDashboardPage = () => {
   const popupType = contentTypes.find((type) => type.id === activeTab)?.popupType || 'project';
   const items = useMemo(() => itemsByType[activeTab] || [], [itemsByType, activeTab]);
 
-  const filteredItems = useMemo(() => {
-    let list = items;
-
-    if (activeTab === 'volunteerApplications' && volunteerFilter !== 'all') {
-      list = list.filter((v) => v.status === volunteerFilter);
-    }
-    if (activeTab === 'donations' && donationStatusFilter !== 'all') {
-      list = list.filter((d) => d.paymentStatus === donationStatusFilter);
-    }
-
-    if (!searchTerm) return list;
-
-    return list.filter((item) =>
-      Object.values(item).some((value) => {
-        if (value === null || value === undefined) return false;
-        return String(typeof value === 'object' ? JSON.stringify(value) : value)
-          .toLowerCase().includes(searchTerm.toLowerCase());
-      })
-    );
-  }, [items, searchTerm, activeTab, volunteerFilter, donationStatusFilter]);
-
-  const loadAllContent = async () => {
-    setLoading(true);
-    try {
-      const [projects, events, blogs, reports, volunteer, volunteersRes, donationsRes] = await Promise.all([
-        apiService.getProjects(),
-        apiService.getEvents(),
-        apiService.getBlogs(),
-        apiService.getReports(),
-        apiService.getVolunteerOpportunities({ includeInactive: true }),
-        apiService.getVolunteers(),
-        apiService.getDonations(),
-      ]);
-
-      const volunteerApplications = Array.isArray(volunteersRes?.data) ? volunteersRes.data : [];
-      const donations = Array.isArray(donationsRes?.data) ? donationsRes.data : [];
-
-      setItemsByType({ projects, events, blogs, reports, volunteer, volunteerApplications, donations });
-    } catch (error) {
-      console.error('Failed to load admin content:', error);
-      toast.error('Failed to load dashboard content');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredItems = items;
+  const refreshContent = () => setRefreshKey((key) => key + 1);
 
   const normalizePayload = (type, item) => {
     if (type === 'project') {
@@ -651,6 +665,7 @@ const AdminDashboardPage = () => {
       else if (activeTab === 'volunteer') await apiService.deleteVolunteerOpportunityAdmin(item.id);
 
       setItemsByType((prev) => ({ ...prev, [activeTab]: prev[activeTab].filter((entry) => entry.id !== item.id) }));
+      refreshContent();
       toast.success('Deleted successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Delete failed');
@@ -661,6 +676,7 @@ const AdminDashboardPage = () => {
     try {
       await apiService.updateVolunteerStatus(volunteer._id || volunteer.id, 'approved');
       updateVolunteerInState({ ...volunteer, status: 'approved' });
+      refreshContent();
       toast.success(`${volunteer.fullName} has been accepted`);
     } catch (error) {
       toast.error('Failed to accept volunteer');
@@ -671,6 +687,7 @@ const AdminDashboardPage = () => {
     try {
       await apiService.updateVolunteerStatus(volunteer._id || volunteer.id, 'rejected');
       updateVolunteerInState({ ...volunteer, status: 'rejected' });
+      refreshContent();
       toast.success(`${volunteer.fullName} has been rejected`);
     } catch (error) {
       toast.error('Failed to reject volunteer');
@@ -689,6 +706,7 @@ const AdminDashboardPage = () => {
       if ((selectedVolunteer?._id || selectedVolunteer?.id) === (volunteer._id || volunteer.id)) {
         closeVolunteerModal();
       }
+      refreshContent();
       toast.success(`${volunteer.fullName} has been deleted`);
     } catch (error) {
       toast.error(error.message || 'Failed to delete volunteer');
@@ -724,6 +742,7 @@ const AdminDashboardPage = () => {
             : donation
         ),
       }));
+      refreshContent();
 
       toast.success(`Donation from ${payload.name} updated`);
       closeDonationModal();
@@ -743,6 +762,7 @@ const AdminDashboardPage = () => {
         ...prev,
         donations: prev.donations.filter((entry) => (entry._id || entry.id) !== (donation._id || donation.id)),
       }));
+      refreshContent();
       toast.success('Donation deleted successfully');
     } catch (error) {
       toast.error(error.message || 'Failed to delete donation');
@@ -777,6 +797,7 @@ const AdminDashboardPage = () => {
         }, {})
       );
       setVolunteerModalMode('view');
+      refreshContent();
       toast.success('Volunteer details updated successfully');
     } catch (error) {
       toast.error(error.message || 'Failed to update volunteer');
@@ -794,6 +815,7 @@ const AdminDashboardPage = () => {
           (d._id || d.id) === (donation._id || donation.id) ? { ...d, paymentStatus: 'accepted' } : d
         ),
       }));
+      refreshContent();
       toast.success(`Donation from ${donation.name} accepted`);
     } catch (error) {
       toast.error('Failed to accept donation');
@@ -810,6 +832,7 @@ const AdminDashboardPage = () => {
           (d._id || d.id) === (donation._id || donation.id) ? { ...d, paymentStatus: 'rejected' } : d
         ),
       }));
+      refreshContent();
       toast.success(`Donation from ${donation.name} rejected`);
     } catch (error) {
       toast.error('Failed to reject donation');
@@ -833,6 +856,8 @@ const AdminDashboardPage = () => {
           ? prev[activeTab].map((entry) => (entry.id === savedItem.id ? savedItem : entry))
           : [savedItem, ...prev[activeTab]],
       }));
+      if (!selectedItem) setPage(1);
+      refreshContent();
     } finally {
       setSaving(false);
     }
@@ -853,28 +878,35 @@ const AdminDashboardPage = () => {
     toast.success('Exported to Excel');
   };
 
-  const handleExport = () => {
-    if (activeTab === 'volunteerApplications') {
-      const approved = items.filter((v) => v.status === 'approved');
-      if (approved.length === 0) { toast.info('No accepted volunteers to export'); return; }
-      exportToExcel(approved, 'volunteer_applications', ['fullName', 'email', 'phone', 'city', 'state', 'occupation', 'skills', 'interests', 'hoursPerWeek', 'status', 'createdAt'], ['Full Name', 'Email', 'Phone', 'City', 'State', 'Occupation', 'Skills', 'Interests', 'Hours/Week', 'Status', 'Applied Date']);
-      return;
+  const handleExport = async () => {
+    try {
+      const params = { search: searchTerm.trim() || undefined };
+      if (activeTab === 'volunteerApplications') params.status = 'approved';
+      if (activeTab === 'donations' && donationStatusFilter !== 'all') params.status = donationStatusFilter;
+      const { items: exportItems } = await apiService.getAdminContentPage(activeTab, params);
+      if (activeTab === 'volunteerApplications') {
+        if (exportItems.length === 0) { toast.info('No accepted volunteers to export'); return; }
+        exportToExcel(exportItems, 'volunteer_applications', ['fullName', 'email', 'phone', 'city', 'state', 'occupation', 'skills', 'interests', 'hoursPerWeek', 'status', 'createdAt'], ['Full Name', 'Email', 'Phone', 'City', 'State', 'Occupation', 'Skills', 'Interests', 'Hours/Week', 'Status', 'Applied Date']);
+        return;
+      }
+      if (activeTab === 'donations') {
+        exportToExcel(exportItems, 'donations', ['name', 'email', 'phone', 'amount', 'type', 'project', 'transactionId', 'paymentStatus', 'pan', 'city', 'state', 'createdAt'], ['Donor Name', 'Email', 'Phone', 'Amount (₹)', 'Type', 'Project', 'Transaction ID', 'Status', 'PAN', 'City', 'State', 'Date']);
+        return;
+      }
+      if (exportItems.length === 0) { toast.info('Nothing to export'); return; }
+      const columns = tableColumns[activeTab];
+      const csvRows = [columns.join(','), ...exportItems.map((item) => columns.map((column) => `"${String(item[column] ?? '').replace(/"/g, '""')}"`).join(','))];
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${activeTab}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Exported successfully');
+    } catch (error) {
+      toast.error(error.message || 'Export failed');
     }
-    if (activeTab === 'donations') {
-      exportToExcel(filteredItems, 'donations', ['name', 'email', 'phone', 'amount', 'type', 'project', 'transactionId', 'paymentStatus', 'pan', 'city', 'state', 'createdAt'], ['Donor Name', 'Email', 'Phone', 'Amount (₹)', 'Type', 'Project', 'Transaction ID', 'Status', 'PAN', 'City', 'State', 'Date']);
-      return;
-    }
-    if (items.length === 0) { toast.info('Nothing to export'); return; }
-    const columns = tableColumns[activeTab];
-    const csvRows = [columns.join(','), ...items.map((item) => columns.map((column) => `"${String(item[column] ?? '').replace(/"/g, '""')}"`).join(','))];
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${activeTab}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('Exported successfully');
   };
 
   const renderCell = (column, value) => {
@@ -905,27 +937,35 @@ const AdminDashboardPage = () => {
 
   const isSpecialTab = ['volunteerApplications', 'donations', 'donationSettings', 'homepageCarousel'].includes(activeTab);
   const selectedVolunteerFields = selectedVolunteer ? getVolunteerFieldList(selectedVolunteer) : [];
+  const statusSummary = summaryByType[activeTab] || {};
+  const selectedStatus = activeTab === 'donations' ? donationStatusFilter : volunteerFilter;
+  const statusOptions = ['donations', 'volunteerApplications'].includes(activeTab) ? [
+    { id: 'all', label: 'ALL', count: statusSummary.total, active: 'border-blue-300 bg-blue-50 text-blue-800' },
+    { id: 'pending', label: 'Pending', count: statusSummary.pending, active: 'border-amber-300 bg-amber-50 text-amber-800' },
+    { id: activeTab === 'donations' ? 'accepted' : 'approved', label: activeTab === 'donations' ? 'Accepted' : 'Approved', count: activeTab === 'donations' ? statusSummary.accepted : statusSummary.approved, active: 'border-green-300 bg-green-50 text-green-800' },
+    { id: 'rejected', label: 'Rejected', count: statusSummary.rejected, active: 'border-red-300 bg-red-50 text-red-800' },
+  ] : [];
 
   const renderDashboardTabs = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <nav aria-label="Admin sections" className="mb-5 flex flex-wrap items-center gap-2">
       {contentTypes.map((type) => (
         <button
           key={type.id}
-          onClick={() => { setActiveTab(type.id); setSearchTerm(''); setVolunteerFilter('all'); setDonationStatusFilter('all'); }}
-          className={`p-4 rounded-lg shadow text-left transition-colors ${activeTab === type.id ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:shadow-md'}`}
+          type="button"
+          aria-pressed={activeTab === type.id}
+          onClick={() => { setActiveTab(type.id); setPage(1); setSearchTerm(''); setVolunteerFilter('all'); setDonationStatusFilter(type.id === 'donations' ? 'pending' : 'all'); }}
+          className={`inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === type.id ? 'border-primary-500 bg-primary-600 text-white shadow-sm' : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50'}`}
         >
-          <type.icon className="w-6 h-6 mb-3" />
-          <div className="text-sm font-semibold">{type.label}</div>
-          <div className={`text-xs mt-1 ${activeTab === type.id ? 'text-primary-100' : 'text-gray-500'}`}>
-            {type.id === 'donationSettings'
-              ? 'Configure'
-              : type.id === 'homepageCarousel'
-                ? `${heroCarouselSlides.length} slides`
-                : `${itemsByType[type.id]?.length || 0} items`}
-          </div>
+          <type.icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          <span>{type.label}</span>
+          {type.id !== 'donationSettings' && (
+            <span className={`rounded px-1.5 py-0.5 text-[11px] leading-none ${activeTab === type.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {type.id === 'homepageCarousel' ? heroCarouselSlides.length : totalsByType[type.id] || 0}
+            </span>
+          )}
         </button>
       ))}
-    </div>
+    </nav>
   );
 
   // ---- Donation Settings Panel ----
@@ -933,13 +973,6 @@ const AdminDashboardPage = () => {
     return (
       <div className="pt-20 pb-16 min-h-screen bg-gray-50">
         <div className="container-custom">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage donation QR code and bank details shown on the public donation page.</p>
-            </div>
-          </div>
-
           {renderDashboardTabs()}
 
           {settingsLoading ? (
@@ -1024,21 +1057,17 @@ const AdminDashboardPage = () => {
     return (
       <div className="pt-20 pb-16 min-h-screen bg-gray-50">
         <div className="container-custom">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage the hero news carousel displayed between the homepage badge and headline.</p>
-            </div>
+          {renderDashboardTabs()}
+
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleAddHeroSlide}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center"
+              className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center"
             >
               <FiPlus className="mr-2" />
               Add Slide
             </button>
           </div>
-
-          {renderDashboardTabs()}
 
           {settingsLoading ? (
             <div className="flex items-center justify-center h-64">
@@ -1245,108 +1274,68 @@ const AdminDashboardPage = () => {
 
   // ---- Main Dashboard ----
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-      <div className="container-custom">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Create, edit, and delete the content shown on your public pages.</p>
-          </div>
-          <div className="flex gap-3">
-            {activeTab !== 'donationSettings' && activeTab !== 'homepageCarousel' && (
-              <button onClick={handleExport} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center">
-                <FiDownload className="mr-2" />
-                {activeTab === 'volunteerApplications' ? 'Export Accepted (Excel)' : activeTab === 'donations' ? 'Export (Excel)' : 'Export'}
-              </button>
-            )}
-            {!isSpecialTab && (
-              <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center">
-                <FiPlus className="mr-2" />
-                Add New
-              </button>
-            )}
-          </div>
-        </div>
-
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
+      <div className="container-custom flex min-h-0 flex-1 flex-col">
         {renderDashboardTabs()}
 
         {/* Search + filter */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-72 lg:w-80">
+              <FiSearch className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-3 text-xs focus:border-primary-500 focus:outline-none"
               />
             </div>
-            {activeTab === 'volunteerApplications' && (
-              <select value={volunteerFilter} onChange={(e) => setVolunteerFilter(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+            {statusOptions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+                <div role="group" aria-label={activeTab === 'donations' ? 'Donation status' : 'Volunteer application status'} className="flex flex-wrap items-center gap-1.5">
+                  {statusOptions.map((status) => (
+                    <button
+                      key={status.id}
+                      type="button"
+                      aria-pressed={selectedStatus === status.id}
+                      onClick={() => { (activeTab === 'donations' ? setDonationStatusFilter : setVolunteerFilter)(status.id); setPage(1); }}
+                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${selectedStatus === status.id ? status.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      <span>{status.label}</span>
+                      <span className="font-semibold tabular-nums">{status.count || 0}</span>
+                    </button>
+                  ))}
+                </div>
+                {activeTab === 'donations' && (
+                  <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs text-violet-800">
+                    <span>Total Amount</span>
+                    <strong className="tabular-nums">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(summaryByType.donations?.totalAmount || 0)}</strong>
+                  </span>
+                )}
+              </div>
             )}
-            {activeTab === 'donations' && (
-              <select value={donationStatusFilter} onChange={(e) => setDonationStatusFilter(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            )}
-          </div>
+            <div className={`flex shrink-0 items-center gap-2 ${statusOptions.length > 0 ? '' : 'sm:ml-auto'}`}>
+              <button onClick={handleExport} className="flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
+                <FiDownload className="mr-2" />
+                {activeTab === 'volunteerApplications' ? 'Export Accepted (Excel)' : activeTab === 'donations' ? 'Export (Excel)' : 'Export'}
+              </button>
+              {!isSpecialTab && (
+                <button onClick={handleAdd} className="flex items-center rounded-md bg-primary-600 px-2.5 py-1.5 text-xs text-white hover:bg-primary-700">
+                  <FiPlus className="mr-2" />
+                  Add New
+                </button>
+              )}
+            </div>
         </div>
 
-        {/* Stats */}
-        {activeTab === 'volunteerApplications' && !loading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {[
-              { label: 'Total Applications', value: items.length, color: 'bg-blue-50 text-blue-700' },
-              { label: 'Pending', value: items.filter((v) => v.status === 'pending').length, color: 'bg-yellow-50 text-yellow-700' },
-              { label: 'Approved', value: items.filter((v) => v.status === 'approved').length, color: 'bg-green-50 text-green-700' },
-              { label: 'Rejected', value: items.filter((v) => v.status === 'rejected').length, color: 'bg-red-50 text-red-700' },
-            ].map((stat) => (
-              <div key={stat.label} className={`rounded-lg p-4 ${stat.color}`}>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-sm font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'donations' && !loading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {[
-              { label: 'Total', value: items.length, color: 'bg-blue-50 text-blue-700' },
-              { label: 'Pending', value: items.filter((d) => d.paymentStatus === 'pending').length, color: 'bg-yellow-50 text-yellow-700' },
-              { label: 'Accepted', value: items.filter((d) => d.paymentStatus === 'accepted').length, color: 'bg-green-50 text-green-700' },
-              {
-                label: 'Total Amount',
-                value: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(items.filter((d) => d.paymentStatus === 'accepted').reduce((s, d) => s + Number(d.amount || 0), 0)),
-                color: 'bg-purple-50 text-purple-700',
-              },
-            ].map((stat) => (
-              <div key={stat.label} className={`rounded-lg p-4 ${stat.color}`}>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-sm font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-lg bg-white shadow-lg">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="min-h-0 flex-1 py-12 text-center">
               <FiFileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">No {activeTab} yet</h3>
               <p className="text-gray-500 mb-4">
@@ -1357,8 +1346,9 @@ const AdminDashboardPage = () => {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="min-h-0 flex-1 overflow-x-auto">
+              <div className="flex h-full min-w-[900px] flex-col">
+                <table className="w-full table-fixed border-b border-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     {tableColumns[activeTab].map((column) => (
@@ -1378,11 +1368,18 @@ const AdminDashboardPage = () => {
                     )}
                   </tr>
                 </thead>
+                </table>
+                <div className="admin-table-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <table className="w-full table-fixed">
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredItems.map((item, idx) => (
                     <tr key={item._id || item.id || idx} className="hover:bg-gray-50">
                       {tableColumns[activeTab].map((column) => (
-                        <td key={column} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td
+                          key={column}
+                          className="max-w-0 truncate px-6 py-4 text-sm text-gray-900"
+                          title={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
+                        >
                           {renderCell(column, item[column])}
                         </td>
                       ))}
@@ -1486,8 +1483,19 @@ const AdminDashboardPage = () => {
                   ))}
                 </tbody>
               </table>
+                </div>
+              </div>
             </div>
           )}
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={loading}
+            itemLabel="Rows"
+          />
         </div>
 
         {showPopup && !isSpecialTab && (
