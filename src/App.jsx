@@ -46,14 +46,15 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
+  const isAdminDashboard = location.pathname === '/admin';
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin'].includes(location.pathname);
 
   return (
-    <div className="min-h-screen">
+    <div className={isAdminDashboard ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
-      <div className="flex min-h-screen w-full flex-col">
-        <main className="flex-grow">
+      <div className={isAdminDashboard ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
+        <main className={isAdminDashboard ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />

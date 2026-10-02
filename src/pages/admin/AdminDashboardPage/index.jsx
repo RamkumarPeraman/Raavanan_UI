@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FiBriefcase, FiCalendar, FiFileText, FiEdit3, FiBookOpen, FiUsers, FiClipboard, FiCreditCard,
   FiPlus, FiEdit2, FiTrash2, FiSearch,
@@ -9,6 +9,7 @@ import { FaFileExcel, FaFilePdf, FaRupeeSign } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import ContentPopup from '../../../components/admin/ContentPopup';
+import PaymentSettingsPanel from '../../../components/admin/PaymentSettingsPanel';
 import Pagination from '../../../components/common/Pagination';
 import apiService, { defaultBankDetails, defaultHeroNewsCarousel } from '../../../services/api';
 
@@ -392,7 +393,14 @@ const AdminDashboardPage = () => {
   const [qrImage, setQrImage] = useState('');
   const [bankDetails, setBankDetails] = useState({ ...defaultBankDetails });
   const [heroCarouselSlides, setHeroCarouselSlides] = useState([]);
-  const qrFileRef = useRef(null);
+  const [previewSlideId, setPreviewSlideId] = useState(null);
+
+  useEffect(() => {
+    if (!previewSlideId) return undefined;
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setPreviewSlideId(null); };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [previewSlideId]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
@@ -492,7 +500,7 @@ const AdminDashboardPage = () => {
 
   const handleHeroSlideChange = (slideId, field, value) => {
     setHeroCarouselSlides((prev) => prev.map((slide) => (
-      slide.id === slideId ? { ...slide, [field]: value } : slide
+      slide.id === slideId ? { ...slide, [field]: field === 'summary' ? value.slice(0, 500) : value } : slide
     )));
   };
 
@@ -539,6 +547,10 @@ const AdminDashboardPage = () => {
   };
 
   const handleSaveHeroCarousel = async () => {
+    if (heroCarouselSlides.some((slide) => slide.summary.length > 500)) {
+      toast.error('Each slide summary must be 500 characters or fewer');
+      return;
+    }
     setHeroSaving(true);
     try {
       await apiService.updateAdminSettings({ heroNewsCarousel: heroCarouselSlides });
@@ -955,6 +967,8 @@ const AdminDashboardPage = () => {
   };
 
   const isSpecialTab = ['volunteerApplications', 'donations', 'donationSettings', 'homepageCarousel'].includes(activeTab);
+  const previewSlideIndex = heroCarouselSlides.findIndex((slide) => slide.id === previewSlideId);
+  const previewSlide = previewSlideIndex >= 0 ? heroCarouselSlides[previewSlideIndex] : null;
   const selectedVolunteerFields = selectedVolunteer ? getVolunteerFieldList(selectedVolunteer) : [];
   const statusSummary = summaryByType[activeTab] || {};
   const selectedStatus = activeTab === 'donations' ? donationStatusFilter : volunteerFilter;
@@ -965,9 +979,9 @@ const AdminDashboardPage = () => {
     { id: 'rejected', label: 'Rejected', icon: FiXCircle, count: statusSummary.rejected, inactive: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100', active: 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200' },
   ] : [];
 
-  const renderDashboardTabs = (showToolbar = false) => (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
-    <nav aria-label="Admin sections" className="flex min-w-0 w-full items-center gap-1.5 overflow-x-auto sm:w-auto sm:flex-1">
+  const renderDashboardTabs = (showToolbar = false, trailingAction = null) => (
+    <div className="mb-4 flex shrink-0 flex-wrap items-center gap-2">
+    <nav aria-label="Admin sections" className="flex min-w-0 w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-1">
       {contentTypes.map((type) => (
         <button
           key={type.id}
@@ -975,7 +989,7 @@ const AdminDashboardPage = () => {
           aria-pressed={activeTab === type.id}
           aria-label={type.label}
           data-tooltip={type.label}
-          onClick={() => { setActiveTab(type.id); setPage(1); setSearchTerm(''); setVolunteerFilter('pending'); setDonationStatusFilter(type.id === 'donations' ? 'pending' : 'all'); }}
+          onClick={() => { setActiveTab(type.id); setPage(1); setSearchTerm(''); setPreviewSlideId(null); setVolunteerFilter('pending'); setDonationStatusFilter(type.id === 'donations' ? 'pending' : 'all'); }}
           className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === type.id ? 'border-primary-500 bg-primary-600 px-2.5 text-white shadow-sm' : 'w-8 border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50'}`}
         >
           <type.icon aria-hidden="true" className="h-4 w-4 shrink-0" />
@@ -988,6 +1002,7 @@ const AdminDashboardPage = () => {
         </button>
       ))}
     </nav>
+    {trailingAction}
     {statusOptions.length > 0 && (
       <div role="group" aria-label={activeTab === 'donations' ? 'Donation status' : 'Volunteer application status'} className="flex shrink-0 items-center gap-1.5">
         {statusOptions.map((status) => (
@@ -1046,83 +1061,19 @@ const AdminDashboardPage = () => {
   // ---- Donation Settings Panel ----
   if (activeTab === 'donationSettings') {
     return (
-      <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-        <div className="w-full px-[5px]">
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
+        <div className="w-full flex-1 overflow-y-auto px-[5px]">
           {renderDashboardTabs()}
-
-          {settingsLoading ? (
-            <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div></div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* QR Code Upload */}
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold mb-1 flex items-center gap-2"><FiImage /> Donation QR Code</h2>
-                <p className="text-sm text-gray-500 mb-5">Upload the QR code image that donators will scan to pay. This will appear on the public donation page.</p>
-
-                <div
-                  onClick={() => qrFileRef.current?.click()}
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors mb-4"
-                >
-                  {qrImage ? (
-                    <div className="relative inline-block">
-                      <img src={qrImage} alt="QR Preview" className="max-h-48 mx-auto rounded border border-gray-200" />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setQrImage(''); if (qrFileRef.current) qrFileRef.current.value = ''; }}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <FiX size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-gray-400">
-                      <FiUpload size={32} className="mx-auto mb-2" />
-                      <p className="text-sm font-medium">Click to upload QR image</p>
-                      <p className="text-xs mt-1">PNG, JPG up to 5MB</p>
-                    </div>
-                  )}
-                </div>
-                <input ref={qrFileRef} type="file" accept="image/*" onChange={handleQrFileChange} className="hidden" />
-              </div>
-
-              {/* Bank Details */}
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold mb-1 flex items-center gap-2"><FaRupeeSign /> Bank Account Details</h2>
-                <p className="text-sm text-gray-500 mb-5">These details are shown on the donation page for direct bank transfers.</p>
-
-                <div className="space-y-4">
-                  {[
-                    { key: 'accountHolder', label: 'Account Holder' },
-                    { key: 'bank', label: 'Bank Name' },
-                    { key: 'branch', label: 'Branch' },
-                    { key: 'accountNo', label: 'Account Number' },
-                    { key: 'ifscCode', label: 'IFSC Code' },
-                  ].map(({ key, label }) => (
-                    <div key={key}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
-                      <input
-                        type="text"
-                        value={bankDetails[key] || ''}
-                        onChange={(e) => setBankDetails((prev) => ({ ...prev, [key]: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Save Button */}
-              <div className="lg:col-span-2">
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={settingsSaving}
-                  className="w-full md:w-auto px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {settingsSaving ? 'Saving...' : 'Save Payment Settings'}
-                </button>
-              </div>
-            </div>
-          )}
+          <PaymentSettingsPanel
+            loading={settingsLoading}
+            saving={settingsSaving}
+            qrImage={qrImage}
+            onQrChange={handleQrFileChange}
+            onQrRemove={() => setQrImage('')}
+            bankDetails={bankDetails}
+            onBankChange={(key, value) => setBankDetails((previous) => ({ ...previous, [key]: value }))}
+            onSave={handleSaveSettings}
+          />
         </div>
       </div>
     );
@@ -1130,32 +1081,36 @@ const AdminDashboardPage = () => {
 
   if (activeTab === 'homepageCarousel') {
     return (
-      <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-        <div className="w-full px-[5px]">
-          {renderDashboardTabs()}
-
-          <div className="mb-6 flex justify-end">
-            <button
-              onClick={handleAddHeroSlide}
-              className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center"
-            >
-              <FiPlus className="mr-2" />
-              Add Slide
-            </button>
-          </div>
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
+        <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
+          {renderDashboardTabs(false, (
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveHeroCarousel}
+                disabled={heroSaving || settingsLoading}
+                className="inline-flex h-8 items-center rounded-md bg-primary-600 px-2.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {heroSaving ? 'Saving...' : 'Save Hero Carousel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleAddHeroSlide}
+                disabled={settingsLoading}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary-600 bg-white px-2.5 text-xs font-medium text-primary-700 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FiPlus aria-hidden="true" className="h-4 w-4" />
+                Add Slide
+              </button>
+            </div>
+          ))}
 
           {settingsLoading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900">Hero carousel preview</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  These slides are stored in the database and shown only on the public homepage. Add image, title, summary, and link for each slide.
-                </p>
-              </div>
+            <div className="admin-table-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4 pr-1">
 
               {heroCarouselSlides.length === 0 && (
                 <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
@@ -1205,11 +1160,28 @@ const AdminDashboardPage = () => {
                       >
                         Remove
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlideId(slide.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 px-3 py-2 text-sm text-primary-700 hover:bg-primary-50"
+                      >
+                        <FiEye aria-hidden="true" /> Preview
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_360px] gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+                    <div className="grid content-start gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={slide.title}
+                          onChange={(e) => handleHeroSlideChange(slide.id, 'title', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
+                          placeholder="Featured headline"
+                        />
+                      </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
                         <input
@@ -1218,6 +1190,16 @@ const AdminDashboardPage = () => {
                           onChange={(e) => handleHeroSlideChange(slide.id, 'category', e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
                           placeholder="Movement Update"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Link</label>
+                        <input
+                          type="text"
+                          value={slide.link}
+                          onChange={(e) => handleHeroSlideChange(slide.id, 'link', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
+                          placeholder="/blogs or https://..."
                         />
                       </div>
                       <div>
@@ -1231,54 +1213,29 @@ const AdminDashboardPage = () => {
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Title</label>
-                        <input
-                          type="text"
-                          value={slide.title}
-                          onChange={(e) => handleHeroSlideChange(slide.id, 'title', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
-                          placeholder="Featured headline"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Summary</label>
                         <textarea
                           rows={4}
+                          maxLength={500}
                           value={slide.summary}
                           onChange={(e) => handleHeroSlideChange(slide.id, 'summary', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm resize-none"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm resize-y"
                           placeholder="Short supporting summary for this news slide"
                         />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Link</label>
-                        <input
-                          type="text"
-                          value={slide.link}
-                          onChange={(e) => handleHeroSlideChange(slide.id, 'link', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm"
-                          placeholder="/blogs or https://..."
-                        />
+                        <p className={`text-right text-xs ${slide.summary.length > 500 ? 'text-red-600' : 'text-gray-500'}`}>{slide.summary.length}/500</p>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-4">
+                    <div>
+                      <div className="rounded-xl border border-dashed border-gray-300 p-3">
                         {slide.image ? (
-                          <div className="space-y-3">
+                          <div>
                             <PreviewImage
                               src={slide.image}
                               fallbackSrc={getFallbackHeroImage(index)}
                               alt={slide.title || `Slide ${index + 1}`}
                               className="w-full h-48 object-cover rounded-xl border border-gray-200"
                             />
-                            <button
-                              type="button"
-                              onClick={() => handleHeroSlideChange(slide.id, 'image', '')}
-                              className="w-full px-4 py-2 border border-red-200 rounded-lg text-sm text-red-600 hover:bg-red-50"
-                            >
-                              Remove image
-                            </button>
                           </div>
                         ) : (
                           <div className="text-center text-gray-400 py-8">
@@ -1288,61 +1245,67 @@ const AdminDashboardPage = () => {
                           </div>
                         )}
 
-                        <label className="mt-4 inline-flex w-full justify-center px-4 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 cursor-pointer text-sm font-semibold">
-                          <FiUpload className="mr-2 mt-0.5" />
-                          Choose image
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              handleHeroSlideImageChange(slide.id, e.target.files?.[0]);
-                              e.target.value = '';
-                            }}
-                          />
-                        </label>
-                        <p className="mt-3 text-xs text-gray-500">
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          {slide.image && (
+                            <button
+                              type="button"
+                              onClick={() => handleHeroSlideChange(slide.id, 'image', '')}
+                              aria-label={`Remove image from slide ${index + 1}`}
+                              data-tooltip="Remove image"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+                            >
+                              <FiTrash2 aria-hidden="true" className="h-4 w-4" />
+                            </button>
+                          )}
+                          <label data-tooltip="Choose image" className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-primary-200 text-primary-700 hover:bg-primary-50">
+                            <FiUpload aria-hidden="true" className="h-4 w-4" />
+                            <span className="sr-only">Choose image for slide {index + 1}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              aria-label={`Choose image for slide ${index + 1}`}
+                              className="sr-only"
+                              onChange={(e) => {
+                                handleHeroSlideImageChange(slide.id, e.target.files?.[0]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
                           Large images are automatically compressed before saving.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl overflow-hidden bg-[#0f2f2f] text-white min-h-[220px] relative">
-                        <PreviewImage
-                          src={slide.image}
-                          fallbackSrc={getFallbackHeroImage(index)}
-                          alt=""
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#082629]/90 via-[#082629]/76 to-[#082629]/40" />
-                        <div className="relative z-10 p-5 flex h-full flex-col justify-end">
-                          <span className="inline-flex w-fit rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/90">
-                            {slide.category || 'Latest News'}
-                          </span>
-                          <h4 className="mt-3 text-lg font-bold leading-snug">
-                            {slide.title || 'Slide title preview'}
-                          </h4>
-                          <p className="mt-2 text-sm leading-6 text-white/80">
-                            {slide.summary || 'Slide summary preview will appear here.'}
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
               ))}
 
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSaveHeroCarousel}
-                  disabled={heroSaving}
-                  className="w-full md:w-auto px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {heroSaving ? 'Saving...' : 'Save Hero Carousel'}
-                </button>
-              </div>
             </div>
           )}
         </div>
+        {previewSlide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewSlideId(null)}>
+            <div role="dialog" aria-modal="true" aria-labelledby="hero-preview-title" onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <h2 id="hero-preview-title" className="text-sm font-semibold text-gray-900">Slide {previewSlideIndex + 1} Preview</h2>
+                <button type="button" onClick={() => setPreviewSlideId(null)} aria-label="Close preview" className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100"><FiX aria-hidden="true" /></button>
+              </div>
+              <div className="relative flex min-h-[320px] items-end overflow-hidden bg-[#0f2f2f] text-white sm:min-h-[440px]">
+                <PreviewImage src={previewSlide.image} fallbackSrc={getFallbackHeroImage(previewSlideIndex)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#082629]/95 via-[#082629]/75 to-[#082629]/30" />
+                <div className="relative z-10 max-w-2xl p-6 sm:p-10">
+                  <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider">{previewSlide.category || 'Latest News'}</span>
+                  <h3 className="mt-4 text-2xl font-bold leading-tight sm:text-4xl">{previewSlide.title || 'Slide title'}</h3>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/90 sm:text-base">{previewSlide.summary || 'Slide summary will appear here.'}</p>
+                  <span className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-semibold text-[#0f2f2f]">{previewSlide.buttonLabel || 'Read more'}</span>
+                </div>
+              </div>
+              {previewSlide.link && <p className="break-all px-4 py-3 text-xs text-gray-600">Button link: {previewSlide.link}</p>}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
