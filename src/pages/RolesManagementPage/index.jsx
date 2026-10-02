@@ -181,7 +181,7 @@ const RolesManagementPage = () => {
                             onClick={() => handleDeleteRole(role)}
                             disabled={deletingId === role.id}
                             className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1 rounded hover:bg-red-50 transition-colors"
-                            title="Delete role"
+                            data-tooltip="Delete role" aria-label="Delete role"
                           >
                             <FiTrash2 size={16} />
                           </button>

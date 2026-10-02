@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Components
 import Header from './components/common/Header';
 import Footer from './components/common/FoundationFooter';
+import CommonTooltip from './components/common/CommonTooltip';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages for raavanan
@@ -118,6 +119,7 @@ function AppLayout() {
         {!hideFooter && <Footer />}
       </div>
       <ToastContainer position="top-right" autoClose={5000} />
+      <CommonTooltip />
     </div>
   );
 }

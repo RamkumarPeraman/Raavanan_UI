@@ -488,7 +488,7 @@ const MessagesPage = () => {
                 <button
                   onClick={() => setShowNewMessageModal(true)}
                   className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                  title="New Message"
+                  data-tooltip="New Message" aria-label="New message"
                 >
                   <FiPlus size={18} />
                 </button>
@@ -617,14 +617,14 @@ const MessagesPage = () => {
                       <button
                         onClick={handleBulkArchive}
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                        title="Archive selected"
+                        data-tooltip="Archive selected" aria-label="Archive selected"
                       >
                         <FiArchive size={18} />
                       </button>
                       <button
                         onClick={handleBulkDelete}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Delete selected"
+                        data-tooltip="Delete selected" aria-label="Delete selected"
                       >
                         <FiTrash2 size={18} />
                       </button>
@@ -633,7 +633,7 @@ const MessagesPage = () => {
                   <button
                     onClick={() => setShowDetailsModal(true)}
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                    title="View details"
+                    data-tooltip="View details" aria-label="View details"
                   >
                     <FiEye size={18} />
                   </button>
@@ -800,13 +800,13 @@ const MessagesPage = () => {
                       <button
                         onClick={handleFileUpload}
                         className="p-2 text-gray-400 hover:text-gray-600 rounded"
-                        title="Attach file"
+                        data-tooltip="Attach file" aria-label="Attach file"
                       >
                         <FiPaperclip size={18} />
                       </button>
                       <button
                         className="p-2 text-gray-400 hover:text-gray-600 rounded"
-                        title="Add emoji"
+                        data-tooltip="Add emoji" aria-label="Add emoji"
                       >
                         <FiSmile size={18} />
                       </button>

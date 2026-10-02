@@ -411,7 +411,7 @@ const MessengerPage = () => {
                     type="button"
                     onClick={() => setShowGroupModal(true)}
                     className="rounded-lg border border-gray-200 p-2 text-gray-700 hover:bg-gray-50"
-                    title="Create group"
+                    data-tooltip="Create group" aria-label="Create group"
                   >
                     <FiUsers size={18} />
                   </button>
@@ -419,7 +419,7 @@ const MessengerPage = () => {
                     type="button"
                     onClick={() => setShowNewMessageModal(true)}
                     className="rounded-lg bg-primary-600 p-2 text-white hover:bg-primary-700"
-                    title="New message"
+                    data-tooltip="New message" aria-label="New message"
                   >
                     <FiPlus size={18} />
                   </button>

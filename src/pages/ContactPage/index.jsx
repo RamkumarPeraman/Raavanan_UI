@@ -449,7 +449,7 @@ const ContactPage = () => {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={name}
-                    title={name}
+                    data-tooltip={name}
                     className={`${className} text-white p-3 rounded-lg text-center transition-colors`}
                   >
                     <Icon className="w-6 h-6 mx-auto" />

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FiGrid, FiCalendar, FiFileText, FiUsers,
-  FiPlus, FiEdit2, FiTrash2, FiSearch, FiDownload,
-  FiCheck, FiX, FiDollarSign, FiUserCheck, FiSettings,
+  FiBriefcase, FiCalendar, FiFileText, FiEdit3, FiBookOpen, FiUsers, FiClipboard, FiCreditCard,
+  FiPlus, FiEdit2, FiTrash2, FiSearch,
+  FiCheck, FiX, FiCheckCircle, FiXCircle, FiList, FiClock,
   FiUpload, FiEye, FiImage, FiChevronUp, FiChevronDown,
 } from 'react-icons/fi';
-import { FaRupeeSign } from 'react-icons/fa';
+import { FaFileExcel, FaFilePdf, FaRupeeSign } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import ContentPopup from '../../../components/admin/ContentPopup';
@@ -13,15 +13,15 @@ import Pagination from '../../../components/common/Pagination';
 import apiService, { defaultBankDetails, defaultHeroNewsCarousel } from '../../../services/api';
 
 const contentTypes = [
-  { id: 'projects', label: 'Projects', icon: FiGrid, popupType: 'project' },
-  { id: 'events', label: 'Events', icon: FiCalendar, popupType: 'event' },
-  { id: 'blogs', label: 'Blogs', icon: FiFileText, popupType: 'blog' },
-  { id: 'reports', label: 'Reports & Publications', icon: FiFileText, popupType: 'report' },
-  { id: 'volunteer', label: 'Volunteer Opportunities', icon: FiUsers, popupType: 'volunteer' },
-  { id: 'volunteerApplications', label: 'Volunteer Applications', icon: FiUserCheck, popupType: null },
   { id: 'donations', label: 'Donations', icon: FaRupeeSign, popupType: null },
+  { id: 'projects', label: 'Projects', icon: FiBriefcase, popupType: 'project' },
+  { id: 'events', label: 'Events', icon: FiCalendar, popupType: 'event' },
+  { id: 'blogs', label: 'Blogs', icon: FiEdit3, popupType: 'blog' },
+  { id: 'reports', label: 'Reports & Publications', icon: FiBookOpen, popupType: 'report' },
+  { id: 'volunteer', label: 'Volunteer Opportunities', icon: FiUsers, popupType: 'volunteer' },
+  { id: 'volunteerApplications', label: 'Volunteer Applications', icon: FiClipboard, popupType: null },
   { id: 'homepageCarousel', label: 'Hero Carousel', icon: FiImage, popupType: null },
-  { id: 'donationSettings', label: 'Donation Settings', icon: FiSettings, popupType: null },
+  { id: 'donationSettings', label: 'Payment Settings', icon: FiCreditCard, popupType: null },
 ];
 
 const tableColumns = {
@@ -356,7 +356,7 @@ const parseVolunteerFieldValue = (rawValue, sourceValue, key) => {
 };
 
 const AdminDashboardPage = () => {
-  const [activeTab, setActiveTab] = useState('projects');
+  const [activeTab, setActiveTab] = useState('donations');
   const [itemsByType, setItemsByType] = useState({
     projects: [], events: [], blogs: [], reports: [],
     volunteer: [], volunteerApplications: [], donations: [],
@@ -373,7 +373,7 @@ const AdminDashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [volunteerFilter, setVolunteerFilter] = useState('all');
+  const [volunteerFilter, setVolunteerFilter] = useState('pending');
   const [donationStatusFilter, setDonationStatusFilter] = useState('pending');
   const [screenshotModal, setScreenshotModal] = useState(null);
   const [volunteerModalMode, setVolunteerModalMode] = useState(null);
@@ -482,7 +482,7 @@ const AdminDashboardPage = () => {
     setSettingsSaving(true);
     try {
       await apiService.updateAdminSettings({ donationQrImage: qrImage, bankDetails });
-      toast.success('Donation settings saved successfully!');
+      toast.success('Payment settings saved successfully!');
     } catch (e) {
       toast.error(e.message || 'Failed to save settings');
     } finally {
@@ -878,32 +878,51 @@ const AdminDashboardPage = () => {
     toast.success('Exported to Excel');
   };
 
-  const handleExport = async () => {
+  const exportToPdf = async (data, filename, columns, headers) => {
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+    const doc = new jsPDF({ orientation: 'landscape', format: columns.length > 10 ? 'a3' : 'a4' });
+    doc.setFontSize(14);
+    doc.text(filename.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()), 12, 15);
+    autoTable(doc, {
+      head: [headers.map((header) => header.replace('₹', 'INR'))],
+      body: data.map((item) => columns.map((column) => {
+        const value = Array.isArray(item[column]) ? item[column].join(', ') : item[column];
+        return value == null ? '' : String(value);
+      })),
+      startY: 21,
+      margin: { left: 10, right: 10 },
+      styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+      headStyles: { fillColor: [22, 101, 99] },
+    });
+    doc.save(`${filename}.pdf`);
+    toast.success('Exported to PDF');
+  };
+
+  const handleExport = async (format) => {
     try {
       const params = { search: searchTerm.trim() || undefined };
       if (activeTab === 'volunteerApplications') params.status = 'approved';
       if (activeTab === 'donations' && donationStatusFilter !== 'all') params.status = donationStatusFilter;
       const { items: exportItems } = await apiService.getAdminContentPage(activeTab, params);
-      if (activeTab === 'volunteerApplications') {
-        if (exportItems.length === 0) { toast.info('No accepted volunteers to export'); return; }
-        exportToExcel(exportItems, 'volunteer_applications', ['fullName', 'email', 'phone', 'city', 'state', 'occupation', 'skills', 'interests', 'hoursPerWeek', 'status', 'createdAt'], ['Full Name', 'Email', 'Phone', 'City', 'State', 'Occupation', 'Skills', 'Interests', 'Hours/Week', 'Status', 'Applied Date']);
-        return;
-      }
-      if (activeTab === 'donations') {
-        exportToExcel(exportItems, 'donations', ['name', 'email', 'phone', 'amount', 'type', 'project', 'transactionId', 'paymentStatus', 'pan', 'city', 'state', 'createdAt'], ['Donor Name', 'Email', 'Phone', 'Amount (₹)', 'Type', 'Project', 'Transaction ID', 'Status', 'PAN', 'City', 'State', 'Date']);
-        return;
-      }
       if (exportItems.length === 0) { toast.info('Nothing to export'); return; }
-      const columns = tableColumns[activeTab];
-      const csvRows = [columns.join(','), ...exportItems.map((item) => columns.map((column) => `"${String(item[column] ?? '').replace(/"/g, '""')}"`).join(','))];
-      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${activeTab}.csv`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-      toast.success('Exported successfully');
+      let filename;
+      let columns;
+      let headers;
+      if (activeTab === 'volunteerApplications') {
+        filename = 'volunteer_applications';
+        columns = ['fullName', 'email', 'phone', 'city', 'state', 'occupation', 'skills', 'interests', 'hoursPerWeek', 'status', 'createdAt'];
+        headers = ['Full Name', 'Email', 'Phone', 'City', 'State', 'Occupation', 'Skills', 'Interests', 'Hours/Week', 'Status', 'Applied Date'];
+      } else if (activeTab === 'donations') {
+        filename = 'donations';
+        columns = ['name', 'email', 'phone', 'amount', 'type', 'project', 'transactionId', 'paymentStatus', 'pan', 'city', 'state', 'createdAt'];
+        headers = ['Donor Name', 'Email', 'Phone', 'Amount (₹)', 'Type', 'Project', 'Transaction ID', 'Status', 'PAN', 'City', 'State', 'Date'];
+      } else {
+        filename = activeTab;
+        columns = tableColumns[activeTab];
+        headers = columns.map((column) => column.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase()));
+      }
+      if (format === 'pdf') await exportToPdf(exportItems, filename, columns, headers);
+      else exportToExcel(exportItems, filename, columns, headers);
     } catch (error) {
       toast.error(error.message || 'Export failed');
     }
@@ -940,39 +959,95 @@ const AdminDashboardPage = () => {
   const statusSummary = summaryByType[activeTab] || {};
   const selectedStatus = activeTab === 'donations' ? donationStatusFilter : volunteerFilter;
   const statusOptions = ['donations', 'volunteerApplications'].includes(activeTab) ? [
-    { id: 'all', label: 'ALL', count: statusSummary.total, active: 'border-blue-300 bg-blue-50 text-blue-800' },
-    { id: 'pending', label: 'Pending', count: statusSummary.pending, active: 'border-amber-300 bg-amber-50 text-amber-800' },
-    { id: activeTab === 'donations' ? 'accepted' : 'approved', label: activeTab === 'donations' ? 'Accepted' : 'Approved', count: activeTab === 'donations' ? statusSummary.accepted : statusSummary.approved, active: 'border-green-300 bg-green-50 text-green-800' },
-    { id: 'rejected', label: 'Rejected', count: statusSummary.rejected, active: 'border-red-300 bg-red-50 text-red-800' },
+    { id: 'all', label: 'ALL', icon: FiList, count: statusSummary.total, inactive: 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100', active: 'border-blue-400 bg-blue-100 text-blue-900 hover:bg-blue-200' },
+    { id: 'pending', label: 'Pending', icon: FiClock, count: statusSummary.pending, inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100', active: 'border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200' },
+    { id: activeTab === 'donations' ? 'accepted' : 'approved', label: activeTab === 'donations' ? 'Accepted' : 'Approved', icon: FiCheckCircle, count: activeTab === 'donations' ? statusSummary.accepted : statusSummary.approved, inactive: 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100', active: 'border-green-400 bg-green-100 text-green-900 hover:bg-green-200' },
+    { id: 'rejected', label: 'Rejected', icon: FiXCircle, count: statusSummary.rejected, inactive: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100', active: 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200' },
   ] : [];
 
-  const renderDashboardTabs = () => (
-    <nav aria-label="Admin sections" className="mb-5 flex flex-wrap items-center gap-2">
+  const renderDashboardTabs = (showToolbar = false) => (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+    <nav aria-label="Admin sections" className="flex min-w-0 w-full items-center gap-1.5 overflow-x-auto sm:w-auto sm:flex-1">
       {contentTypes.map((type) => (
         <button
           key={type.id}
           type="button"
           aria-pressed={activeTab === type.id}
-          onClick={() => { setActiveTab(type.id); setPage(1); setSearchTerm(''); setVolunteerFilter('all'); setDonationStatusFilter(type.id === 'donations' ? 'pending' : 'all'); }}
-          className={`inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === type.id ? 'border-primary-500 bg-primary-600 text-white shadow-sm' : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50'}`}
+          aria-label={type.label}
+          data-tooltip={type.label}
+          onClick={() => { setActiveTab(type.id); setPage(1); setSearchTerm(''); setVolunteerFilter('pending'); setDonationStatusFilter(type.id === 'donations' ? 'pending' : 'all'); }}
+          className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === type.id ? 'border-primary-500 bg-primary-600 px-2.5 text-white shadow-sm' : 'w-8 border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50'}`}
         >
-          <type.icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          <span>{type.label}</span>
-          {type.id !== 'donationSettings' && (
-            <span className={`rounded px-1.5 py-0.5 text-[11px] leading-none ${activeTab === type.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+          <type.icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+          {activeTab === type.id && <span>{type.label}</span>}
+          {activeTab === type.id && type.id !== 'donationSettings' && (
+            <span className="rounded bg-white/20 px-1.5 py-0.5 text-[11px] leading-none text-white">
               {type.id === 'homepageCarousel' ? heroCarouselSlides.length : totalsByType[type.id] || 0}
             </span>
           )}
         </button>
       ))}
     </nav>
+    {statusOptions.length > 0 && (
+      <div role="group" aria-label={activeTab === 'donations' ? 'Donation status' : 'Volunteer application status'} className="flex shrink-0 items-center gap-1.5">
+        {statusOptions.map((status) => (
+          <button
+            key={status.id}
+            type="button"
+            aria-pressed={selectedStatus === status.id}
+            aria-label={`${status.label}: ${status.count || 0}`}
+            data-tooltip={status.label}
+            onClick={() => { (activeTab === 'donations' ? setDonationStatusFilter : setVolunteerFilter)(status.id); setPage(1); }}
+            className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${selectedStatus === status.id ? `px-2.5 ${status.active}` : `w-8 ${status.inactive}`}`}
+          >
+            <status.icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+            {selectedStatus === status.id && <span>{status.label}</span>}
+            {selectedStatus === status.id && status.id === 'pending' && <span className="font-semibold tabular-nums">{status.count || 0}</span>}
+          </button>
+        ))}
+      </div>
+    )}
+    {showToolbar && (
+      <>
+        {activeTab === 'donations' && (
+          <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 text-xs text-violet-800">
+            <span>Total Amount</span>
+            <strong className="tabular-nums">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(summaryByType.donations?.totalAmount || 0)}</strong>
+          </span>
+        )}
+        <button type="button" onClick={() => handleExport('excel')} aria-label={activeTab === 'volunteerApplications' ? 'Export accepted applications to Excel' : 'Export to Excel'} data-tooltip={activeTab === 'volunteerApplications' ? 'Export accepted applications to Excel' : 'Export to Excel'} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-green-700 hover:bg-green-50">
+          <FaFileExcel aria-hidden="true" className="h-4 w-4 text-green-700" />
+        </button>
+        <button type="button" onClick={() => handleExport('pdf')} aria-label={activeTab === 'volunteerApplications' ? 'Export accepted applications to PDF' : 'Export to PDF'} data-tooltip={activeTab === 'volunteerApplications' ? 'Export accepted applications to PDF' : 'Export to PDF'} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-red-700 hover:bg-red-50">
+          <FaFilePdf aria-hidden="true" className="h-4 w-4" />
+        </button>
+        <div className="relative w-full sm:w-48 lg:w-56">
+          <FiSearch aria-hidden="true" className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            aria-label={`Search ${activeTab}`}
+            placeholder={`Search ${activeTab}...`}
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+            className="h-8 w-full rounded-md border border-gray-300 bg-white pl-8 pr-3 text-xs focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+        {!isSpecialTab && (
+          <button type="button" onClick={handleAdd} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-primary-600 px-2.5 text-xs text-white hover:bg-primary-700">
+            <FiPlus aria-hidden="true" className="h-4 w-4" />
+            Add New
+          </button>
+        )}
+      </>
+    )}
+    </div>
   );
 
   // ---- Donation Settings Panel ----
   if (activeTab === 'donationSettings') {
     return (
       <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-        <div className="container-custom">
+        <div className="w-full px-[5px]">
           {renderDashboardTabs()}
 
           {settingsLoading ? (
@@ -1043,7 +1118,7 @@ const AdminDashboardPage = () => {
                   disabled={settingsSaving}
                   className="w-full md:w-auto px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {settingsSaving ? 'Saving...' : 'Save Donation Settings'}
+                  {settingsSaving ? 'Saving...' : 'Save Payment Settings'}
                 </button>
               </div>
             </div>
@@ -1056,7 +1131,7 @@ const AdminDashboardPage = () => {
   if (activeTab === 'homepageCarousel') {
     return (
       <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-        <div className="container-custom">
+        <div className="w-full px-[5px]">
           {renderDashboardTabs()}
 
           <div className="mb-6 flex justify-end">
@@ -1275,58 +1350,8 @@ const AdminDashboardPage = () => {
   // ---- Main Dashboard ----
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
-      <div className="container-custom flex min-h-0 flex-1 flex-col">
-        {renderDashboardTabs()}
-
-        {/* Search + filter */}
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative w-full sm:w-72 lg:w-80">
-              <FiSearch className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder={`Search ${activeTab}...`}
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-3 text-xs focus:border-primary-500 focus:outline-none"
-              />
-            </div>
-            {statusOptions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
-                <div role="group" aria-label={activeTab === 'donations' ? 'Donation status' : 'Volunteer application status'} className="flex flex-wrap items-center gap-1.5">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status.id}
-                      type="button"
-                      aria-pressed={selectedStatus === status.id}
-                      onClick={() => { (activeTab === 'donations' ? setDonationStatusFilter : setVolunteerFilter)(status.id); setPage(1); }}
-                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${selectedStatus === status.id ? status.active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
-                    >
-                      <span>{status.label}</span>
-                      <span className="font-semibold tabular-nums">{status.count || 0}</span>
-                    </button>
-                  ))}
-                </div>
-                {activeTab === 'donations' && (
-                  <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs text-violet-800">
-                    <span>Total Amount</span>
-                    <strong className="tabular-nums">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(summaryByType.donations?.totalAmount || 0)}</strong>
-                  </span>
-                )}
-              </div>
-            )}
-            <div className={`flex shrink-0 items-center gap-2 ${statusOptions.length > 0 ? '' : 'sm:ml-auto'}`}>
-              <button onClick={handleExport} className="flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
-                <FiDownload className="mr-2" />
-                {activeTab === 'volunteerApplications' ? 'Export Accepted (Excel)' : activeTab === 'donations' ? 'Export (Excel)' : 'Export'}
-              </button>
-              {!isSpecialTab && (
-                <button onClick={handleAdd} className="flex items-center rounded-md bg-primary-600 px-2.5 py-1.5 text-xs text-white hover:bg-primary-700">
-                  <FiPlus className="mr-2" />
-                  Add New
-                </button>
-              )}
-            </div>
-        </div>
+      <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
+        {renderDashboardTabs(true)}
 
         {/* Table */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-lg bg-white shadow-lg">
@@ -1378,7 +1403,7 @@ const AdminDashboardPage = () => {
                         <td
                           key={column}
                           className="max-w-0 truncate px-6 py-4 text-sm text-gray-900"
-                          title={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
+                          data-tooltip={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
                         >
                           {renderCell(column, item[column])}
                         </td>
@@ -1390,7 +1415,7 @@ const AdminDashboardPage = () => {
                               type="button"
                               onClick={() => setScreenshotModal(item.paymentScreenshot)}
                               className="flex items-center gap-1 text-primary-600 hover:text-primary-800 text-xs font-medium"
-                              title="View screenshot"
+                              data-tooltip="View screenshot"
                             >
                               <FiEye size={14} />
                               View
@@ -1402,22 +1427,26 @@ const AdminDashboardPage = () => {
                       )}
                       {activeTab === 'donations' && (
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2">
                             {item.paymentStatus === 'pending' ? (
                               <>
                                 <button
+                                  type="button"
                                   onClick={() => handleAcceptDonation(item)}
-                                  className="flex items-center gap-1 rounded-lg bg-green-100 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-200"
-                                  title="Accept donation"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-green-700 hover:bg-green-100 hover:text-green-900"
+                                  data-tooltip="Approve donation"
+                                  aria-label={`Approve donation from ${item.name || 'donor'}`}
                                 >
-                                  <FiCheck size={14} /> Approve
+                                  <FiCheckCircle size={16} />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleRejectDonation(item)}
-                                  className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-200"
-                                  title="Reject donation"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 hover:bg-red-100 hover:text-red-900"
+                                  data-tooltip="Reject donation"
+                                  aria-label={`Reject donation from ${item.name || 'donor'}`}
                                 >
-                                  <FiX size={14} /> Reject
+                                  <FiXCircle size={16} />
                                 </button>
                               </>
                             ) : (
@@ -1440,42 +1469,44 @@ const AdminDashboardPage = () => {
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => openVolunteerModal(item, 'view')}
-                              className="flex items-center gap-1 px-3 py-1 bg-sky-100 text-sky-700 rounded-lg hover:bg-sky-200 text-xs font-medium"
-                              title="View volunteer details"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sky-700 hover:bg-sky-100"
+                              data-tooltip="View volunteer details"
+                              aria-label="View volunteer details"
                             >
-                              <FiEye size={14} /> View
+                              <FiEye size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteVolunteer(item)}
-                              className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium"
-                              title="Delete volunteer"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 hover:bg-red-100"
+                              data-tooltip="Delete volunteer"
+                              aria-label="Delete volunteer"
                             >
-                              <FiTrash2 size={14} /> Delete
+                              <FiTrash2 size={16} />
                             </button>
                           </div>
                         ) : activeTab === 'donations' ? (
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => openDonationModal(item)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
-                              title="Edit donation"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-700 hover:bg-blue-100"
+                              data-tooltip="Edit donation"
                               aria-label="Edit donation"
                             >
                               <FiEdit2 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteDonation(item)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200"
-                              title="Delete donation"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 hover:bg-red-100"
+                              data-tooltip="Delete donation"
                               aria-label="Delete donation"
                             >
                               <FiTrash2 size={14} />
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-end space-x-3">
-                            <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-900" title="Edit"><FiEdit2 size={16} /></button>
-                            <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-900" title="Delete"><FiTrash2 size={16} /></button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => handleEdit(item)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 hover:bg-blue-100 hover:text-blue-900" data-tooltip="Edit" aria-label="Edit item"><FiEdit2 size={16} /></button>
+                            <button onClick={() => handleDelete(item)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 hover:bg-red-100 hover:text-red-900" data-tooltip="Delete" aria-label="Delete item"><FiTrash2 size={16} /></button>
                           </div>
                         )}
                       </td>

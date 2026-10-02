@@ -947,7 +947,7 @@ const UserGroupPage = () => {
                       <button
                         onClick={() => handleViewUser(user)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="View Details"
+                        data-tooltip="View Details" aria-label="View details"
                       >
                         <FiEye size={18} />
                       </button>
@@ -961,7 +961,7 @@ const UserGroupPage = () => {
                               ? 'text-orange-600 hover:bg-orange-50'
                               : 'text-green-600 hover:bg-green-50'
                           }`}
-                          title={user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          data-tooltip={user.status === 'active' ? 'Deactivate' : 'Activate'} aria-label={user.status === 'active' ? 'Deactivate user' : 'Activate user'}
                         >
                           {user.status === 'active' ? <FiLock size={18} /> : <FiUnlock size={18} />}
                         </button>
@@ -972,7 +972,7 @@ const UserGroupPage = () => {
                         <button
                           onClick={() => handleEditUser(user)}
                           className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Edit User"
+                          data-tooltip="Edit User" aria-label="Edit user"
                         >
                           <FiEdit2 size={18} />
                         </button>
@@ -983,7 +983,7 @@ const UserGroupPage = () => {
                         <button
                           onClick={() => handleDeleteUser(user)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete User"
+                          data-tooltip="Delete User" aria-label="Delete user"
                         >
                           <FiTrash2 size={18} />
                         </button>
@@ -1070,7 +1070,7 @@ const UserGroupPage = () => {
                       <button
                         onClick={() => handleViewUser(user)}
                         className="text-blue-600 hover:text-blue-900 mr-3"
-                        title="View Details"
+                        data-tooltip="View Details" aria-label="View details"
                       >
                         <FiEye size={16} />
                       </button>
@@ -1084,7 +1084,7 @@ const UserGroupPage = () => {
                               ? 'text-orange-600 hover:text-orange-900'
                               : 'text-green-600 hover:text-green-900'
                           }`}
-                          title={user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          data-tooltip={user.status === 'active' ? 'Deactivate' : 'Activate'} aria-label={user.status === 'active' ? 'Deactivate user' : 'Activate user'}
                         >
                           {user.status === 'active' ? <FiLock size={16} /> : <FiUnlock size={16} />}
                         </button>
@@ -1095,7 +1095,7 @@ const UserGroupPage = () => {
                         <button
                           onClick={() => handleEditUser(user)}
                           className="text-green-600 hover:text-green-900 mr-3"
-                          title="Edit User"
+                          data-tooltip="Edit User" aria-label="Edit user"
                         >
                           <FiEdit2 size={16} />
                         </button>
@@ -1106,7 +1106,7 @@ const UserGroupPage = () => {
                         <button
                           onClick={() => handleDeleteUser(user)}
                           className="text-red-600 hover:text-red-900"
-                          title="Delete User"
+                          data-tooltip="Delete User" aria-label="Delete user"
                         >
                           <FiTrash2 size={16} />
                         </button>
