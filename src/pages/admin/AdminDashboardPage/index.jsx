@@ -1,3 +1,4 @@
+import CommonLoader from '../../../components/common/CommonLoader';
 import AdminRecordCard from '../../../components/admin/AdminRecordCard';
 import CommonSelect from '../../../components/common/CommonSelect';
 import CommonPopup from '../../../components/common/CommonPopup';
@@ -1119,7 +1120,7 @@ const AdminDashboardPage = () => {
 
           {settingsLoading ? (
             <div className="flex min-h-0 flex-1 items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <CommonLoader />
             </div>
           ) : (
             <div className="admin-table-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pb-4 pr-1">
@@ -1371,7 +1372,7 @@ const AdminDashboardPage = () => {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-lg bg-white shadow-lg">
           {loading ? (
             <div className="flex min-h-0 flex-1 items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <CommonLoader />
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="min-h-0 flex-1 py-12 text-center">
@@ -1584,7 +1585,7 @@ const AdminDashboardPage = () => {
             )}>
             {volunteerModalLoading && !selectedVolunteer ? (
                   <div className="flex h-48 items-center justify-center">
-                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
+                    <CommonLoader />
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

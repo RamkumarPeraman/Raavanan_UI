@@ -1,3 +1,4 @@
+import CommonLoader from '../../components/common/CommonLoader';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -204,23 +205,11 @@ const BlogsMediaPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-        <div className="container-custom">
-          <div className="animate-pulse">
-            <div className="h-10 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-6 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="bg-gray-200 h-80 rounded-lg"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex min-h-[60dvh] items-center justify-center bg-gray-50 pt-20">
+      <CommonLoader size="lg" label="Loading articles…" showLabel />
+    </div>
+  );
 
   return (
     <div className="pt-20 pb-16 min-h-screen bg-gray-50">

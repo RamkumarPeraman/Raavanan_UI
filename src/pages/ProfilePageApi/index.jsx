@@ -1,3 +1,4 @@
+import CommonLoader from '../../components/common/CommonLoader';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -179,7 +180,7 @@ const ProfilePageApi = () => {
   if (loading) {
     return (
       <div className="pt-24 min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="h-12 w-12 rounded-full border-b-2 border-primary-600 animate-spin" />
+        <CommonLoader />
       </div>
     );
   }

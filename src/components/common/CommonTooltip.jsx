@@ -1,11 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const CommonTooltip = () => {
   const [tooltip, setTooltip] = useState(null);
+  const tooltipRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!tooltip || !tooltipRef.current) return;
+    const element = tooltipRef.current;
+    const { width, height } = element.getBoundingClientRect();
+    const margin = 8;
+    const left = Math.max(margin, Math.min(tooltip.center - width / 2, window.innerWidth - width - margin));
+    const above = tooltip.top - height - margin;
+    const below = tooltip.bottom + margin;
+    const preferredTop = above >= margin ? above : below;
+    const top = Math.max(margin, Math.min(preferredTop, window.innerHeight - height - margin));
+    element.style.left = `${left}px`;
+    element.style.top = `${top}px`;
+    element.style.visibility = 'visible';
+  }, [tooltip]);
 
   useEffect(() => {
     let activeElement = null;
+    let hideTimer;
 
     const updateTooltip = () => {
       if (!activeElement?.isConnected) {
@@ -23,17 +40,18 @@ const CommonTooltip = () => {
         setTooltip(null);
         return;
       }
-      const above = rect.top >= 48;
       setTooltip({
         text,
-        left: Math.min(Math.max(rect.left + rect.width / 2, 112), window.innerWidth - 112),
-        top: above ? rect.top - 8 : rect.bottom + 8,
-        above,
+        center: rect.left + rect.width / 2,
+        top: rect.top,
+        bottom: rect.bottom,
       });
     };
 
     const findTarget = (node) => node instanceof Element ? node.closest('[data-tooltip]') : null;
     const show = (event) => {
+      clearTimeout(hideTimer);
+      if (tooltipRef.current?.contains(event.target)) return;
       const target = findTarget(event.target);
       if (!target || target === activeElement) return;
       activeElement = target;
@@ -41,10 +59,13 @@ const CommonTooltip = () => {
     };
     const hide = (event) => {
       if (!activeElement) return;
-      if (event.relatedTarget instanceof Node && activeElement.contains(event.relatedTarget)) return;
-      if (findTarget(event.target) !== activeElement) return;
-      activeElement = null;
-      setTooltip(null);
+      if (event.relatedTarget instanceof Node && (activeElement.contains(event.relatedTarget) || tooltipRef.current?.contains(event.relatedTarget))) return;
+      if (findTarget(event.target) !== activeElement && !tooltipRef.current?.contains(event.target)) return;
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        activeElement = null;
+        setTooltip(null);
+      }, 100);
     };
     const dismiss = (event) => {
       if (event.key === 'Escape') {
@@ -61,6 +82,7 @@ const CommonTooltip = () => {
     document.addEventListener('scroll', updateTooltip, true);
     window.addEventListener('resize', updateTooltip);
     return () => {
+      clearTimeout(hideTimer);
       document.removeEventListener('pointerover', show);
       document.removeEventListener('pointerout', hide);
       document.removeEventListener('focusin', show);
@@ -74,9 +96,10 @@ const CommonTooltip = () => {
   if (!tooltip) return null;
   return createPortal(
     <div
+      ref={tooltipRef}
       role="tooltip"
-      className="pointer-events-none fixed z-[100] max-w-[min(20rem,calc(100vw-2rem))] rounded-md bg-gray-900 px-2.5 py-1.5 text-center text-xs leading-4 text-white shadow-lg"
-      style={{ left: tooltip.left, top: tooltip.top, transform: tooltip.above ? 'translate(-50%, -100%)' : 'translate(-50%, 0)' }}
+      className="fixed z-[100] w-max max-w-[min(25rem,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-900 px-2.5 py-1.5 text-left text-xs leading-5 text-white shadow-lg [overflow-wrap:anywhere]"
+      style={{ left: 0, top: 0, visibility: 'hidden' }}
     >
       {tooltip.text}
     </div>,

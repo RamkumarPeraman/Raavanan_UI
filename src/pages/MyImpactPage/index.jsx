@@ -1,3 +1,4 @@
+import CommonLoader from '../../components/common/CommonLoader';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -248,7 +249,7 @@ const MyImpactPage = () => {
         <div className="container-custom">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <CommonLoader className="mb-4" />
               <p className="text-gray-600">Calculating your impact...</p>
             </div>
           </div>

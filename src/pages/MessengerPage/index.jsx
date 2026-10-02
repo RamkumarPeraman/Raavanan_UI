@@ -1,3 +1,4 @@
+import CommonLoader from '../../components/common/CommonLoader';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -383,7 +384,7 @@ const MessengerPage = () => {
       <div className="min-h-screen bg-gray-50 pb-16 pt-20">
         <div className="container-custom flex h-64 items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <CommonLoader className="mb-4" />
             <p className="text-gray-600">Loading messenger...</p>
           </div>
         </div>

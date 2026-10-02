@@ -1,3 +1,4 @@
+import CommonLoader from '../../components/common/CommonLoader';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiEye, FiFilter, FiGrid, FiList, FiLock, FiPlus, FiSearch, FiTrash2, FiUnlock } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -273,7 +274,7 @@ const UserGroupPageApi = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><div className="h-12 w-12 rounded-full border-b-2 border-primary-600 animate-spin" /></div>
+          <div className="flex justify-center py-16"><CommonLoader /></div>
         ) : users.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500"><FiFilter className="mx-auto mb-4" size={32} />No users found for the current filters.</div>
         ) : viewMode === 'grid' ? renderCards() : renderTable()}

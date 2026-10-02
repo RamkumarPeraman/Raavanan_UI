@@ -1,3 +1,4 @@
+import CommonLoader from '../common/CommonLoader';
 import { useRef } from 'react';
 import { FaRupeeSign } from 'react-icons/fa';
 import { FiImage, FiUpload, FiX } from 'react-icons/fi';
@@ -14,7 +15,7 @@ const PaymentSettingsPanel = ({ loading, qrImage, onQrChange, onQrRemove, bankDe
   const qrFileRef = useRef(null);
 
   if (loading) {
-    return <div className="flex min-h-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary-600" /></div>;
+    return <div className="flex min-h-full items-center justify-center"><CommonLoader size="sm" /></div>;
   }
 
   const removeQrImage = () => {
