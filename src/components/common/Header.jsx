@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiBarChart2,
@@ -38,11 +39,35 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const userMenuButtonRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const closeOnDesktop = () => {
+      if (desktop.matches) setIsMobileMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        mobileMenuButtonRef.current?.focus();
+      }
+    };
+    desktop.addEventListener('change', closeOnDesktop);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      desktop.removeEventListener('change', closeOnDesktop);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (!isUserMenuOpen) return undefined;
@@ -131,11 +156,16 @@ const Header = () => {
       <div className="container-custom">
         <div className="flex h-16 items-center gap-3 md:h-18">
           <button
+            ref={mobileMenuButtonRef}
             type="button"
-            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            onClick={() => {
+              setIsUserMenuOpen(false);
+              setIsMobileMenuOpen((open) => !open);
+            }}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-800 transition-colors hover:bg-white/80 md:hidden"
             aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {isMobileMenuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
@@ -227,23 +257,21 @@ const Header = () => {
         </div>
       </div>
 
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && createPortal(
+        <div className="fixed inset-x-0 bottom-0 top-16 z-[45] md:hidden">
         <button
           type="button"
-          className="fixed inset-x-0 bottom-0 top-16 bg-ink-950/35 md:hidden"
+          className="absolute inset-0 h-full w-full bg-ink-950/35"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-label="Close navigation"
         />
-      )}
-
-      <aside className={`fixed bottom-0 left-0 top-16 w-72 max-w-[85vw] border-r border-ink-100 bg-white p-4 shadow-2xl transition-transform duration-300 md:hidden ${
-        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <aside id="mobile-navigation" className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain border-r border-ink-100 bg-white p-4 shadow-2xl">
         <nav className="space-y-2" aria-label="Mobile navigation">
           {navigationItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => setIsMobileMenuOpen(false)}
               className={`block rounded-xl px-4 py-3 font-semibold transition-colors ${
                 isActive(item.path)
                   ? 'bg-primary-100 text-primary-800'
@@ -255,6 +283,9 @@ const Header = () => {
           ))}
         </nav>
       </aside>
+        </div>,
+        document.body
+      )}
     </header>
   );
 };
