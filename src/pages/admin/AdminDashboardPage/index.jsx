@@ -944,9 +944,17 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const isDateColumn = (column) => ['date', 'createdAt', 'publishedDate'].includes(column);
+  const formatDisplayDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   const renderCell = (column, value) => {
     if (column === 'date' || column === 'createdAt' || column === 'publishedDate') {
-      return value ? new Date(value).toLocaleDateString('en-IN') : '-';
+      return formatDisplayDate(value);
     }
     if (column === 'goal' || column === 'raised' || column === 'price') {
       return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value || 0));
@@ -1434,7 +1442,7 @@ const AdminDashboardPage = () => {
                           key={column}
                           data-label={column === 'createdAt' ? 'Date' : column.replace(/([A-Z])/g, ' $1').trim()}
                           className="max-w-0 truncate px-6 py-4 text-sm text-gray-900"
-                          data-tooltip={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
+                          data-tooltip={isDateColumn(column) ? formatDisplayDate(item[column]) : typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
                         >
                           {renderCell(column, item[column])}
                         </td>

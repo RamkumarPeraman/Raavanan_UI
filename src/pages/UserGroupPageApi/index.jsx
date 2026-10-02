@@ -1,6 +1,10 @@
+import { createPortal } from 'react-dom';
+import CommonPopup from '../../components/common/CommonPopup';
+import CommonSelect from '../../components/common/CommonSelect';
+import Pagination from '../../components/common/Pagination';
 import CommonLoader from '../../components/common/CommonLoader';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiEye, FiFilter, FiGrid, FiList, FiLock, FiPlus, FiSearch, FiTrash2, FiUnlock } from 'react-icons/fi';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FiEdit2, FiEye, FiFilter, FiUsers, FiCheckCircle, FiShield, FiHeart, FiLock, FiPlus, FiSearch, FiTrash2, FiUnlock, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
 import UserPopup from '../../components/common/UserPopup';
@@ -71,13 +75,41 @@ const UserGroupPageApi = () => {
     fetchRoles();
   }, []);
   const [users, setUsers] = useState([]);
+  const requestIdRef = useRef(0);
   const [stats, setStats] = useState({ total: 0, active: 0, leadership: 0, volunteers: 0, members: 0 });
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [filterPosition, setFilterPosition] = useState(null);
+  const [draftFilters, setDraftFilters] = useState({ role: 'all', department: 'all', status: 'all' });
+  const filterButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const openFilters = () => {
+    if (filterPosition) { setFilterPosition(null); return; }
+    setDraftFilters({ role: selectedRole, department: selectedDepartment, status: selectedStatus });
+    const rect = filterButtonRef.current.getBoundingClientRect();
+    setFilterPosition({ top: Math.min(rect.bottom + 6, Math.max(8, window.innerHeight - 330)), left: Math.max(8, Math.min(rect.left, window.innerWidth - 304)) });
+  };
+  useEffect(() => {
+    if (!filterPosition) return undefined;
+    const dismiss = (event) => {
+      if (!filterPanelRef.current?.contains(event.target) && !filterButtonRef.current?.contains(event.target) && !event.target.closest?.('[role="listbox"]')) setFilterPosition(null);
+    };
+    const keydown = (event) => { if (event.key === 'Escape') { setFilterPosition(null); filterButtonRef.current?.focus(); } };
+    const resize = () => setFilterPosition(null);
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', keydown);
+    window.addEventListener('resize', resize);
+    filterPanelRef.current?.focus();
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', keydown); window.removeEventListener('resize', resize); };
+  }, [filterPosition]);
   const [showPopup, setShowPopup] = useState(false);
   const [popupMode, setPopupMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -86,23 +118,27 @@ const UserGroupPageApi = () => {
   const canDelete = useMemo(() => normalizeRole(currentUser?.role) === 'super_admin', [currentUser]);
 
   const loadUsers = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     try {
       setLoading(true);
       const [userResponse, statsResponse] = await Promise.all([
         apiService.getUsers({
           search: searchTerm || undefined,
-          role: selectedRole,
+          role: ['leadership', 'volunteers'].includes(selectedRole) ? 'all' : selectedRole,
           department: selectedDepartment,
           status: selectedStatus,
         }),
         apiService.getUserStats(),
       ]);
-      setUsers(userResponse.data || []);
+      if (requestId !== requestIdRef.current) return;
+      const result = userResponse.data || [];
+      setUsers(selectedRole === 'leadership' ? result.filter(user => ['admin', 'super_admin', 'manager'].includes(normalizeRole(user.role))) : selectedRole === 'volunteers' ? result.filter(user => ['volunteer', 'volunteer_coordinator'].includes(normalizeRole(user.role))) : result);
       setStats(statsResponse.data || {});
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       toast.error(error.response?.data?.message || error.message || 'Failed to load users');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [searchTerm, selectedRole, selectedDepartment, selectedStatus]);
 
@@ -111,6 +147,7 @@ const UserGroupPageApi = () => {
   }, [loadUsers]);
 
   const handleSaveUser = async (userData) => {
+    setSaving(true);
     try {
       if (popupMode === 'add') {
         await apiService.createUser(userData);
@@ -124,18 +161,23 @@ const UserGroupPageApi = () => {
       loadUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Failed to save user');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteUser = async (user) => {
-    if (!window.confirm(`Delete ${user.name}?`)) return;
+    setDeleting(true);
 
     try {
       await apiService.deleteUser(user.id || user._id);
       toast.success('User deleted successfully');
+      setDeleteTarget(null);
       loadUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Failed to delete user');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -156,131 +198,67 @@ const UserGroupPageApi = () => {
     setShowPopup(true);
   };
 
-  const renderCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {users.map((user) => (
-        <div key={user.id || user._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className={`h-2 ${user.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <UserAvatar user={user} />
-                <div>
-                  <div className="font-semibold">{user.name}</div>
-                  <div className="text-sm text-gray-500">{user.email}</div>
-                </div>
-              </div>
-              <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{availableRoles[user.role]?.name || user.role}</span>
-            </div>
 
-            <div className="space-y-2 text-sm text-gray-600">
-              <div>{user.phone || 'No phone'}</div>
-              <div>{user.department || 'No department'}</div>
-              <div>{user.location || 'No location'}</div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
-              <button onClick={() => openPopup('view', user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><FiEye /></button>
-              {canEdit && <button onClick={() => toggleUserStatus(user)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg">{user.status === 'active' ? <FiLock /> : <FiUnlock />}</button>}
-              {canEdit && <button onClick={() => openPopup('edit', user)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg"><FiEdit2 /></button>}
-              {canDelete && currentUser?.id !== user.id && <button onClick={() => handleDeleteUser(user)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><FiTrash2 /></button>}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderTable = () => (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            {['Member', 'Role', 'Department', 'Status', 'Contact', 'Join Date', 'Actions'].map((label) => (
-              <th key={label} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {users.map((user) => (
-            <tr key={user.id || user._id}>
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <UserAvatar user={user} size="small" />
-                  <div><div className="font-medium">{user.name}</div><div className="text-sm text-gray-500">{user.email}</div></div>
-                </div>
-              </td>
-              <td className="px-6 py-4">{availableRoles[user.role]?.name || user.role}</td>
-              <td className="px-6 py-4">{user.department || '-'}</td>
-              <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{user.status}</span></td>
-              <td className="px-6 py-4">{user.phone || '-'}</td>
-              <td className="px-6 py-4">{user.joinDate || '-'}</td>
-              <td className="px-6 py-4 text-right space-x-2">
-                <button onClick={() => openPopup('view', user)} className="text-blue-600"><FiEye className="inline" /></button>
-                {canEdit && <button onClick={() => toggleUserStatus(user)} className="text-orange-600">{user.status === 'active' ? <FiLock className="inline" /> : <FiUnlock className="inline" />}</button>}
-                {canEdit && <button onClick={() => openPopup('edit', user)} className="text-green-600"><FiEdit2 className="inline" /></button>}
-                {canDelete && currentUser?.id !== user.id && <button onClick={() => handleDeleteUser(user)} className="text-red-600"><FiTrash2 className="inline" /></button>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(users.length / pageSize)));
+  const visibleUsers = users.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const changeFilter = (setter) => (value) => { setter(value); setPage(1); };
+  const formatDate = (value) => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+  const statusBadge = (user) => <span className={`rounded-full px-2 py-0.5 text-xs ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{user.status || 'inactive'}</span>;
+  const actions = (user) => <div className="flex items-center justify-end gap-1">
+    <button aria-label="View user" data-tooltip="View user" onClick={() => openPopup('view', user)} className="rounded p-2 text-sky-700 hover:bg-sky-50"><FiEye /></button>
+    {canEdit && <button aria-label={user.status === 'active' ? 'Deactivate user' : 'Activate user'} data-tooltip={user.status === 'active' ? 'Deactivate user' : 'Activate user'} onClick={() => toggleUserStatus(user)} className="rounded p-2 text-amber-700 hover:bg-amber-50">{user.status === 'active' ? <FiLock /> : <FiUnlock />}</button>}
+    {canEdit && <button aria-label="Edit user" data-tooltip="Edit user" onClick={() => openPopup('edit', user)} className="rounded p-2 text-blue-700 hover:bg-blue-50"><FiEdit2 /></button>}
+    {canDelete && (currentUser?.id || currentUser?._id) !== (user.id || user._id) && <button aria-label="Delete user" data-tooltip="Delete user" onClick={() => setDeleteTarget(user)} className="rounded p-2 text-red-700 hover:bg-red-50"><FiTrash2 /></button>}
+  </div>;
+  const summaries = [
+    { label: 'ALL', count: stats.total, icon: FiUsers, active: selectedRole === 'all' && selectedStatus === 'all', action: () => { setSelectedRole('all'); setSelectedStatus('all'); setSelectedDepartment('all'); }, color: 'blue' },
+    { label: 'Active', count: stats.active, icon: FiCheckCircle, active: selectedStatus === 'active', action: () => { setSelectedRole('all'); setSelectedStatus('active'); }, color: 'green' },
+    { label: 'Leadership', count: stats.leadership, icon: FiShield, active: selectedRole === 'leadership', action: () => { setSelectedRole('leadership'); setSelectedStatus('all'); }, color: 'purple' },
+    { label: 'Volunteers', count: stats.volunteers, icon: FiHeart, active: selectedRole === 'volunteers', action: () => { setSelectedRole('volunteers'); setSelectedStatus('all'); }, color: 'teal' },
+    { label: 'Members', count: stats.members, icon: FiUsers, active: selectedRole === 'member', action: () => { setSelectedRole('member'); setSelectedStatus('all'); }, color: 'indigo' },
+  ];
+  const colors = { blue: 'bg-blue-50 text-blue-700 border-blue-200', green: 'bg-green-50 text-green-700 border-green-200', purple: 'bg-purple-50 text-purple-700 border-purple-200', teal: 'bg-teal-50 text-teal-700 border-teal-200', indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
 
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-      <div className="container-custom">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">User Management</h1>            
-          </div>
-          {canEdit && <button onClick={() => openPopup('add')} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"><FiPlus className="inline mr-2" />Add User</button>}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-4"><div className="text-2xl font-bold">{stats.total || 0}</div><div className="text-sm text-gray-600">Total</div></div>
-          <div className="bg-white rounded-lg shadow p-4"><div className="text-2xl font-bold text-green-600">{stats.active || 0}</div><div className="text-sm text-gray-600">Active</div></div>
-          <div className="bg-white rounded-lg shadow p-4"><div className="text-2xl font-bold text-purple-600">{stats.leadership || 0}</div><div className="text-sm text-gray-600">Leadership</div></div>
-          <div className="bg-white rounded-lg shadow p-4"><div className="text-2xl font-bold text-blue-600">{stats.volunteers || 0}</div><div className="text-sm text-gray-600">Volunteers</div></div>
-          <div className="bg-white rounded-lg shadow p-4"><div className="text-2xl font-bold text-indigo-600">{stats.members || 0}</div><div className="text-sm text-gray-600">Members</div></div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search members..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg" />
-            </div>
-            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-              <option value="all">All Roles</option>
-              {Object.entries(availableRoles).map(([key, role]) => <option key={key} value={key}>{role.name}</option>)}
-            </select>
-            <select value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-              {departments.map((department) => <option key={department} value={department}>{department === 'all' ? 'All Departments' : department}</option>)}
-            </select>
-            <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="flex justify-end mt-4">
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              <button onClick={() => setViewMode('grid')} className={`px-4 py-2 ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}><FiGrid className="inline mr-2" />Grid</button>
-              <button onClick={() => setViewMode('list')} className={`px-4 py-2 ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}><FiList className="inline mr-2" />List</button>
-            </div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-16"><CommonLoader /></div>
-        ) : users.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500"><FiFilter className="mx-auto mb-4" size={32} />No users found for the current filters.</div>
-        ) : viewMode === 'grid' ? renderCards() : renderTable()}
-
-        {showPopup && <UserPopup mode={popupMode} user={selectedUser} onClose={() => { setShowPopup(false); setSelectedUser(null); }} onSave={handleSaveUser} currentUser={currentUser} />}
+    <div className="flex h-[100dvh] min-w-0 flex-col overflow-hidden bg-gray-50 px-[5px] pt-20">
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">        
+        {summaries.map(({ icon: Icon, ...summary }) => <button key={summary.label} type="button" aria-pressed={summary.active} aria-label={summary.label} data-tooltip={summary.label} onClick={() => { summary.action(); setPage(1); }} className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs ${colors[summary.color]} ${summary.active ? 'ring-1 ring-current font-semibold brightness-95' : ''}`}><Icon /><span>{summary.label}</span><span>{summary.count || 0}</span></button>)}
+        <div className="relative w-full sm:ml-auto sm:w-48"><FiSearch className="absolute left-2.5 top-2.5 text-gray-400" /><input aria-label="Search users" value={searchTerm} onChange={(e) => changeFilter(setSearchTerm)(e.target.value)} placeholder="Search users…" className="h-[34px] w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs focus:border-primary-500 focus:outline-none" /></div>
+        <button ref={filterButtonRef} type="button" aria-expanded={Boolean(filterPosition)} aria-controls="user-filter-panel" onClick={openFilters} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-primary-700 hover:bg-primary-50"><FiFilter />Filters</button>
+        {canEdit && <button onClick={() => openPopup('add')} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary-600 px-3 text-xs font-medium text-white hover:bg-primary-700"><FiPlus />Add User</button>}
       </div>
+      {filterPosition && createPortal(
+        <section ref={filterPanelRef} id="user-filter-panel" role="dialog" aria-label="User filters" tabIndex={-1} style={filterPosition} className="fixed z-50 w-72 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-auto rounded-lg border border-slate-200 bg-white shadow-xl outline-none">
+          <div className="flex items-center justify-between px-4 pt-3 text-sm font-semibold text-slate-800">Filters<button aria-label="Close filters" onClick={() => setFilterPosition(null)} className="rounded p-1 text-slate-500 hover:bg-slate-100"><FiX /></button></div>
+                <div className="space-y-4 p-4">
+        <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Role</label><CommonSelect label="Role" value={draftFilters.role} onChange={value => setDraftFilters(previous => ({ ...previous, role: value }))} options={[{ value: 'all', label: 'All Roles' }, { value: 'leadership', label: 'Leadership' }, { value: 'volunteers', label: 'Volunteers' }, ...Object.entries(availableRoles).map(([value, role]) => ({ value, label: role.name }))]} /></div>
+        <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Department</label><CommonSelect label="Department" value={draftFilters.department} onChange={value => setDraftFilters(previous => ({ ...previous, department: value }))} options={departments.map(value => ({ value, label: value === 'all' ? 'All Departments' : value }))} /></div>
+        <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Status</label><CommonSelect label="Status" value={draftFilters.status} onChange={value => setDraftFilters(previous => ({ ...previous, status: value }))} options={[{ value: 'all', label: 'All Status' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} /></div>
+      </div>
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+            <button onClick={() => setDraftFilters({ role: 'all', department: 'all', status: 'all' })} className="text-xs text-slate-500 hover:text-slate-900">Clear</button>
+            <button onClick={() => { setSelectedRole(draftFilters.role); setSelectedDepartment(draftFilters.department); setSelectedStatus(draftFilters.status); setPage(1); setFilterPosition(null); filterButtonRef.current?.focus(); }} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">Apply</button>
+          </div>
+        </section>, document.body
+      )}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
+        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader /></div> : users.length === 0 ? <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-gray-500"><FiFilter size={28} />No users found for these filters.</div> : <>
+          <div className="admin-table-scroll hidden min-h-0 flex-1 overflow-auto lg:block">
+            <table className="w-full table-fixed text-sm"><thead className="sticky top-0 z-10 bg-gray-50"><tr>{['Member', 'Role', 'Department', 'Status', 'Phone', 'Join Date', 'Actions'].map((label, i) => <th key={label} className={`border-b px-3 py-3 text-left text-xs font-medium uppercase text-slate-500 ${i === 0 ? 'w-[26%]' : ''}`}>{label}</th>)}</tr></thead>
+              <tbody className="divide-y divide-gray-100">{visibleUsers.map(user => <tr key={user.id || user._id} className="hover:bg-slate-50">
+                <td className="px-3 py-3"><div className="flex min-w-0 items-center gap-3"><UserAvatar user={user} size="small" /><div className="min-w-0"><div className="truncate font-medium" data-tooltip={user.name}>{user.name}</div><div className="truncate text-xs text-gray-500" data-tooltip={user.email}>{user.email}</div></div></div></td>
+                <td className="truncate px-3 py-3" data-tooltip={availableRoles[normalizeRole(user.role)]?.name || user.role}>{availableRoles[normalizeRole(user.role)]?.name || user.role}</td>
+                <td className="truncate px-3 py-3" data-tooltip={user.department}>{user.department || '-'}</td><td className="px-3 py-3">{statusBadge(user)}</td>
+                <td className="truncate px-3 py-3" data-tooltip={user.phone}>{user.phone || '-'}</td><td className="px-3 py-3 text-xs">{formatDate(user.joinDate)}</td><td className="px-2 py-3">{actions(user)}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+          <div className="admin-table-scroll min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-2 lg:hidden">{visibleUsers.map(user => <article key={user.id || user._id} className="rounded-lg border bg-white p-3 text-sm"><div className="flex items-start gap-3"><UserAvatar user={user} size="small" /><div className="min-w-0 flex-1"><div className="font-semibold text-primary-700 [overflow-wrap:anywhere]">{user.name}</div><div className="mt-1 text-xs text-gray-500 [overflow-wrap:anywhere]">{user.email}</div></div>{statusBadge(user)}</div><div className="mt-3 space-y-1 text-xs text-slate-600"><p>{availableRoles[normalizeRole(user.role)]?.name || user.role}</p><p className="[overflow-wrap:anywhere]">{user.phone || 'No phone'} · {user.department || 'No department'}</p><p>Joined {formatDate(user.joinDate)}</p></div><div className="mt-2 border-t pt-2">{actions(user)}</div></article>)}</div>
+        </>}
+        <Pagination page={currentPage} pageSize={pageSize} total={users.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} disabled={loading} itemLabel="Users" />
+      </div>
+      {showPopup && <UserPopup mode={popupMode} user={selectedUser} busy={saving} onClose={() => { if (!saving) { setShowPopup(false); setSelectedUser(null); } }} onSave={handleSaveUser} currentUser={currentUser} />}
+      {deleteTarget && <CommonPopup title="Delete user" size="sm" busy={deleting} onClose={() => setDeleteTarget(null)} footer={<div className="flex justify-end gap-2"><button disabled={deleting} onClick={() => setDeleteTarget(null)} className="border border-gray-300">Cancel</button><button disabled={deleting} onClick={() => handleDeleteUser(deleteTarget)} className="bg-red-600 text-white">{deleting ? 'Deleting…' : 'Delete'}</button></div>}><p>Delete {deleteTarget.name}? This cannot be undone.</p></CommonPopup>}
     </div>
   );
 };

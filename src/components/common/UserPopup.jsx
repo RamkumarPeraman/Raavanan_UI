@@ -1,14 +1,16 @@
+import CommonPopup from './CommonPopup';
+import CommonSelect from './CommonSelect';
 import React, { useState, useEffect } from 'react';
 import {
-  FiX, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar,
-  FiAward, FiClock, FiHeart, FiShield, FiBriefcase,
-  FiGlobe, FiCamera, FiSave, FiUserPlus
+  FiUser, FiCalendar,
+  FiAward, FiClock, FiHeart, FiShield,
+  FiCamera, FiSave
 } from 'react-icons/fi';
 import { FaUserShield, FaUserCog, FaUserTie, FaUserGraduate } from 'react-icons/fa';
 import { processImageFile } from '../../utils/imageUpload';
 import apiService from '../../services/api';
 
-const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
+const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -134,7 +136,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
         interests: user.interests || [],
         skills: user.skills || []
       });
-      
+
       if (user.profileImage) {
         setPreviewUrl(user.profileImage);
       }
@@ -143,7 +145,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData(prev => ({
@@ -192,7 +194,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
   const handleSave = () => {
     if (mode === 'view') return;
-    
+
     // Validate required fields
     if (!formData.name || !formData.email || !formData.phone) {
       alert('Please fill in all required fields');
@@ -221,36 +223,38 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
   };
 
   const isViewMode = mode === 'view';
-  const isEditMode = mode === 'edit';
   const isAddMode = mode === 'add';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white flex items-center">
-            {mode === 'add' && <FiUserPlus className="mr-2" />}
-            {mode === 'edit' && <FiUser className="mr-2" />}
-            {mode === 'view' && <FiUser className="mr-2" />}
-            {getTitle()}
-          </h2>
+    <CommonPopup title={getTitle()} onClose={onClose} busy={busy} size="lg" footer={(
+        <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="text-white hover:bg-primary-500 p-1 rounded-full transition-colors"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <FiX size={24} />
+            {isViewMode ? 'Close' : 'Cancel'}
           </button>
-        </div>
 
+          {!isViewMode && (
+            <button
+              onClick={handleSave}
+              disabled={busy}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
+            >
+              <FiSave className="mr-2" />
+              {busy ? 'Saving…' : isAddMode ? 'Add Member' : 'Save Changes'}
+            </button>
+          )}
+        </div>
+    )}>
         {/* Tabs */}
-        <div className="border-b border-gray-200 px-6">
-          <div className="flex space-x-6">
+        <div className="mb-3 border-b border-gray-200">
+          <div className="admin-table-scroll flex gap-1 overflow-x-auto">
             {['basic', 'personal', 'professional', 'social'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-3 px-2 font-medium capitalize border-b-2 transition-colors ${
+                className={`shrink-0 py-2 px-2 text-xs font-medium capitalize border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -266,19 +270,19 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+        <div className="min-w-0">
           {/* Basic Info Tab - 3 columns */}
           {activeTab === 'basic' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Profile Image - Column 1 */}
               <div className="col-span-1">
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <div className="bg-gray-50 rounded-lg p-3 text-center">
                   <div className="relative inline-block">
                     <div className="w-32 h-32 rounded-full bg-primary-100 mx-auto overflow-hidden border-4 border-white shadow-lg">
                       {previewUrl ? (
-                        <img 
-                          src={previewUrl} 
-                          alt="Profile" 
+                        <img
+                          src={previewUrl}
+                          alt="Profile"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -317,7 +321,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
               {/* Basic Details - Column 2 & 3 */}
               <div className="col-span-2 grid grid-cols-2 gap-4">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Full Name <span className="text-red-500">*</span>
@@ -389,7 +393,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Role
@@ -398,26 +402,15 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                       <div className="flex items-center">
                         {formData.role && roles[formData.role] && (
                           <>
-                            {React.createElement(roles[formData.role].icon, { 
-                              className: `text-${roles[formData.role].color}-600 mr-2` 
+                            {React.createElement(roles[formData.role].icon, {
+                              className: `text-${roles[formData.role].color}-600 mr-2`
                             })}
                             <span>{roles[formData.role].name}</span>
                           </>
                         )}
                       </div>
                     ) : (
-                      <select
-                        name="role"
-                        value={formData.role}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                      >
-                        {availableRoles.map((r) => (
-                          <option key={r.id} value={r.name.toLowerCase()}>
-                            {r.name.replace(/_/g, ' ')}
-                          </option>
-                        ))}
-                      </select>
+                      <CommonSelect name="role" label="role" value={formData.role || ''} onChange={value => handleInputChange({ target: { name: 'role', value } })} options={availableRoles.map(r => ({ value: r.name.toLowerCase(), label: r.name.replace(/_/g, ' ') }))} />
                     )}
                   </div>
 
@@ -428,17 +421,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                     {isViewMode ? (
                       <p className="text-gray-900">{formData.department || 'Not assigned'}</p>
                     ) : (
-                      <select
-                        name="department"
-                        value={formData.department}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                      >
-                        <option value="">Select Department</option>
-                        {departments.map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </select>
+                      <CommonSelect name="department" label="department" value={formData.department || ''} onChange={value => handleInputChange({ target: { name: 'department', value } })} options={[{ value: '', label: 'Select Department' }, ...departments]} />
                     )}
                   </div>
 
@@ -448,22 +431,14 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                     </label>
                     {isViewMode ? (
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        formData.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
+                        formData.status === 'active'
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {formData.status || 'active'}
                       </span>
                     ) : (
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
+                      <CommonSelect name="status" label="status" value={formData.status || ''} onChange={value => handleInputChange({ target: { name: 'status', value } })} options={[{"value":"active","label":"Active"},{"value":"inactive","label":"Inactive"}]} />
                     )}
                   </div>
                 </div>
@@ -473,11 +448,11 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
           {/* Personal Details Tab - 3 columns */}
           {activeTab === 'personal' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Column 1 */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Personal Info</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Date of Birth
@@ -502,18 +477,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                   {isViewMode ? (
                     <p className="text-gray-900">{formData.gender || 'Not specified'}</p>
                   ) : (
-                    <select
-                      name="gender"
-                      value={formData.gender || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
+                    <CommonSelect name="gender" label="gender" value={formData.gender || ''} onChange={value => handleInputChange({ target: { name: 'gender', value } })} options={[{"value":"","label":"Select Gender"},{"value":"Male","label":"Male"},{"value":"Female","label":"Female"},{"value":"Other","label":"Other"},{"value":"Prefer not to say","label":"Prefer not to say"}]} />
                   )}
                 </div>
 
@@ -524,30 +488,15 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
                   {isViewMode ? (
                     <p className="text-gray-900">{formData.bloodGroup || 'Not specified'}</p>
                   ) : (
-                    <select
-                      name="bloodGroup"
-                      value={formData.bloodGroup || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                    >
-                      <option value="">Select Blood Group</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                    </select>
+                    <CommonSelect name="bloodGroup" label="bloodGroup" value={formData.bloodGroup || ''} onChange={value => handleInputChange({ target: { name: 'bloodGroup', value } })} options={[{"value":"","label":"Select Blood Group"},{"value":"A+","label":"A+"},{"value":"A-","label":"A-"},{"value":"B+","label":"B+"},{"value":"B-","label":"B-"},{"value":"O+","label":"O+"},{"value":"O-","label":"O-"},{"value":"AB+","label":"AB+"},{"value":"AB-","label":"AB-"}]} />
                   )}
                 </div>
               </div>
 
               {/* Column 2 */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Address</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Street Address
@@ -644,9 +593,9 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
               </div>
 
               {/* Column 3 */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Location & Join Date</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Current Location
@@ -705,68 +654,32 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
           {/* Professional Tab - 3 columns */}
           {activeTab === 'professional' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Column 1 - Stats */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Impact Stats</h3>
-                
-                <div className="bg-primary-50 rounded-lg p-4 text-center">
-                  <FiClock className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">
-                    {isViewMode ? formData.volunteerHours : (
-                      <input
-                        type="number"
-                        name="volunteerHours"
-                        value={formData.volunteerHours}
-                        onChange={handleInputChange}
-                        className="w-20 text-center p-1 border border-gray-300 rounded"
-                        min="0"
-                      />
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-600">Volunteer Hours</div>
-                </div>
 
-                <div className="bg-green-50 rounded-lg p-4 text-center">
-                  <FiCalendar className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">
-                    {isViewMode ? formData.eventsAttended : (
-                      <input
-                        type="number"
-                        name="eventsAttended"
-                        value={formData.eventsAttended}
-                        onChange={handleInputChange}
-                        className="w-20 text-center p-1 border border-gray-300 rounded"
-                        min="0"
-                      />
+                {[
+                  { name: 'volunteerHours', label: 'Volunteer Hours', icon: FiClock, color: 'bg-primary-50 text-primary-700' },
+                  { name: 'eventsAttended', label: 'Events Attended', icon: FiCalendar, color: 'bg-green-50 text-green-700' },
+                  { name: 'donations', label: 'Donations', icon: FiHeart, color: 'bg-amber-50 text-amber-700' },
+                ].map(({ name, label, icon: Icon, color }) => (
+                  <div key={name} className={`flex min-h-9 items-center gap-2 rounded px-2.5 py-1.5 ${color}`}>
+                    <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    <label htmlFor={isViewMode ? undefined : `impact-${name}`} className="min-w-0 flex-1 text-xs font-medium">{label}</label>
+                    {isViewMode ? (
+                      <span className="text-xs font-semibold tabular-nums">{name === 'donations' ? '₹' : ''}{formData[name] || 0}</span>
+                    ) : (
+                      <input id={`impact-${name}`} type="number" name={name} value={formData[name]} onChange={handleInputChange} min="0" className="w-20 text-right" />
                     )}
                   </div>
-                  <div className="text-sm text-gray-600">Events Attended</div>
-                </div>
-
-                <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                  <FiHeart className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">
-                    {isViewMode ? `₹${formData.donations}` : (
-                      <input
-                        type="number"
-                        name="donations"
-                        value={formData.donations}
-                        onChange={handleInputChange}
-                        className="w-24 text-center p-1 border border-gray-300 rounded"
-                        min="0"
-                        placeholder="Amount"
-                      />
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-600">Donations</div>
-                </div>
+                ))}
               </div>
 
               {/* Column 2 - Occupation */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Work Details</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Occupation
@@ -805,9 +718,9 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
               </div>
 
               {/* Column 3 - Skills */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Skills</h3>
-                
+
                 {isViewMode ? (
                   <div className="flex flex-wrap gap-2">
                     {formData.skills && formData.skills.length > 0 ? (
@@ -843,11 +756,11 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
 
           {/* Social & Interests Tab - 3 columns */}
           {activeTab === 'social' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Column 1 - Social Links */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Social Media</h3>
-                
+
                 {['facebook', 'twitter', 'linkedin', 'instagram'].map(platform => (
                   <div key={platform}>
                     <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
@@ -872,9 +785,9 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
               </div>
 
               {/* Column 2 - Interests */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Interests</h3>
-                
+
                 {isViewMode ? (
                   <div className="flex flex-wrap gap-2">
                     {formData.interests && formData.interests.length > 0 ? (
@@ -907,9 +820,9 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
               </div>
 
               {/* Column 3 - Membership */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 border-b pb-2">Membership</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Member ID
@@ -937,27 +850,7 @@ const UserPopup = ({ mode, user, onClose, onSave, currentUser }) => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            {isViewMode ? 'Close' : 'Cancel'}
-          </button>
-          
-          {!isViewMode && (
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
-            >
-              <FiSave className="mr-2" />
-              {isAddMode ? 'Add Member' : 'Save Changes'}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </CommonPopup>
   );
 };
 

@@ -46,8 +46,8 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isAdminDashboard = location.pathname === '/admin';
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin'].includes(location.pathname);
+  const isAdminDashboard = ['/admin', '/my-groups'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles'].includes(location.pathname);
 
   return (
     <div className={isAdminDashboard ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
