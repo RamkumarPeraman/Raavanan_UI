@@ -243,8 +243,10 @@ const UserGroupPageApi = () => {
       )}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
         {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader /></div> : users.length === 0 ? <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-gray-500"><FiFilter size={28} />No users found for these filters.</div> : <>
-          <div className="admin-table-scroll hidden min-h-0 flex-1 overflow-auto lg:block">
-            <table className="w-full table-fixed text-sm"><thead className="sticky top-0 z-10 bg-gray-50"><tr>{['Member', 'Role', 'Department', 'Status', 'Phone', 'Join Date', 'Actions'].map((label, i) => <th key={label} className={`border-b px-3 py-3 text-left text-xs font-medium uppercase text-slate-500 ${i === 0 ? 'w-[26%]' : ''}`}>{label}</th>)}</tr></thead>
+          <div className="hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex">
+            <div className="admin-table-scroll shrink-0 overflow-y-hidden bg-gray-50 [scrollbar-gutter:stable]"><table className="w-full table-fixed text-sm"><thead><tr>{['Member', 'Role', 'Department', 'Status', 'Phone', 'Join Date', 'Actions'].map((label, i) => <th key={label} className={`border-b px-3 py-3 text-left text-xs font-medium uppercase text-slate-500 ${i === 0 ? 'w-[26%]' : ''}`}>{label}</th>)}</tr></thead></table></div>
+            <div className="admin-table-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+            <table className="w-full table-fixed text-sm"><colgroup><col style={{ width: '26%' }} />{Array.from({ length: 6 }, (_, index) => <col key={index} />)}</colgroup>
               <tbody className="divide-y divide-gray-100">{visibleUsers.map(user => <tr key={user.id || user._id} className="hover:bg-slate-50">
                 <td className="px-3 py-3"><div className="flex min-w-0 items-center gap-3"><UserAvatar user={user} size="small" /><div className="min-w-0"><div className="truncate font-medium" data-tooltip={user.name}>{user.name}</div><div className="truncate text-xs text-gray-500" data-tooltip={user.email}>{user.email}</div></div></div></td>
                 <td className="truncate px-3 py-3" data-tooltip={availableRoles[normalizeRole(user.role)]?.name || user.role}>{availableRoles[normalizeRole(user.role)]?.name || user.role}</td>
@@ -252,6 +254,7 @@ const UserGroupPageApi = () => {
                 <td className="truncate px-3 py-3" data-tooltip={user.phone}>{user.phone || '-'}</td><td className="px-3 py-3 text-xs">{formatDate(user.joinDate)}</td><td className="px-2 py-3">{actions(user)}</td>
               </tr>)}</tbody>
             </table>
+            </div>
           </div>
           <div className="admin-table-scroll min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50 p-2 lg:hidden">{visibleUsers.map(user => <article key={user.id || user._id} className="rounded-lg border bg-white p-3 text-sm"><div className="flex items-start gap-3"><UserAvatar user={user} size="small" /><div className="min-w-0 flex-1"><div className="font-semibold text-primary-700 [overflow-wrap:anywhere]">{user.name}</div><div className="mt-1 text-xs text-gray-500 [overflow-wrap:anywhere]">{user.email}</div></div>{statusBadge(user)}</div><div className="mt-3 space-y-1 text-xs text-slate-600"><p>{availableRoles[normalizeRole(user.role)]?.name || user.role}</p><p className="[overflow-wrap:anywhere]">{user.phone || 'No phone'} · {user.department || 'No department'}</p><p>Joined {formatDate(user.joinDate)}</p></div><div className="mt-2 border-t pt-2">{actions(user)}</div></article>)}</div>
         </>}
