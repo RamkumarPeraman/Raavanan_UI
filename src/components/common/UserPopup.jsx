@@ -270,7 +270,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
         </div>
 
         {/* Content */}
-        <div className="min-w-0">
+        <div className="min-w-0 [overflow-wrap:anywhere] [&_.grid>*]:min-w-0">
           {/* Basic Info Tab - 3 columns */}
           {activeTab === 'basic' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -320,7 +320,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
               </div>
 
               {/* Basic Details - Column 2 & 3 */}
-              <div className="col-span-2 grid grid-cols-2 gap-4">
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 md:col-span-2">
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -345,7 +345,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     {isViewMode ? (
-                      <p className="text-gray-900">{formData.email || 'Not specified'}</p>
+                      <p className="min-w-0 whitespace-normal text-gray-900 [overflow-wrap:anywhere]">{formData.email || 'Not specified'}</p>
                     ) : (
                       <input
                         type="email"
