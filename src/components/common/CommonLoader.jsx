@@ -1,7 +1,7 @@
 import React from 'react';
 import logo from '../../asset/image/ravanan.png';
 
-const sizes = { sm: 24, md: 56, lg: 80 };
+const sizes = { sm: 24, md: 88, lg: 120 };
 
 /** Logo loader for page requests, panels, and in-button loading states. */
 const CommonLoader = ({ size = 'md', label = 'Loading…', showLabel = false, className = '' }) => (

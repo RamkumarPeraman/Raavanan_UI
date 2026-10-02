@@ -1,15 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  FiAward,
   FiBarChart2,
-  FiBell,
   FiChevronDown,
   FiHeart,
   FiLogOut,
   FiMenu,
-  FiMessageCircle,
-  FiSettings,
   FiShield,
   FiUser,
   FiUsers,
@@ -40,11 +36,34 @@ const navigationItems = [
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+  const userMenuButtonRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return undefined;
+    const closeOutside = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) setIsUserMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsUserMenuOpen(false);
+        userMenuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('focusin', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('focusin', closeOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isUserMenuOpen]);
 
   const syncAuthState = () => {
     const token = localStorage.getItem('authToken');
@@ -157,12 +176,13 @@ const Header = () => {
             </Link>
 
             {isLoggedIn ? (
-              <div className="relative">
+              <div ref={userMenuRef} className="relative">
                 <button
+                  ref={userMenuButtonRef}
                   type="button"
                   onClick={() => setIsUserMenuOpen((open) => !open)}
                   className="flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-white/80"
-                  aria-label="Open account menu"
+                  aria-label={isUserMenuOpen ? 'Close account menu' : 'Open account menu'}
                   aria-expanded={isUserMenuOpen}
                 >
                   <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary-200 font-semibold text-primary-700 ring-1 ring-primary-300/60">
@@ -182,10 +202,6 @@ const Header = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white py-2 shadow-2xl">
                     <Link to="/profile" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>
-                    <Link to="/my-impact" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiAward className="mr-3" />My Impact</Link>
-                    <Link to="/messages" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiMessageCircle className="mr-3" />Messages</Link>
-                    <Link to="/notifications" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiBell className="mr-3" />Notifications</Link>
-                    <Link to="/settings" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiSettings className="mr-3" />Account Settings</Link>
 
                     {isAdmin && (
                       <div className="mt-1 border-t border-gray-100 pt-1">
