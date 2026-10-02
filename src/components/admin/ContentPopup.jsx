@@ -1,8 +1,8 @@
+import CommonSelect from '../common/CommonSelect';
+import CommonPopup from '../common/CommonPopup';
 import React, { useState, useEffect } from 'react';
 import {
-  FiX, FiSave, FiImage, FiCalendar, FiMapPin, 
-  FiUser, FiTag, FiClock, FiDollarSign, FiHeart,
-  FiUpload, FiTrash2, FiPlus
+  FiSave, FiImage, FiUpload, FiTrash2, FiPlus
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { processImageFile } from '../../utils/imageUpload';
@@ -223,29 +223,31 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
   const config = getFormConfig();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">{config.title}</h2>
+    <CommonPopup title={config.title} onClose={onClose} busy={loading}
+      footer={(
+          <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="text-white hover:bg-primary-500 p-1 rounded-full transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <FiX size={24} />
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center"
+            >
+              <FiSave className="mr-2" />
+              {loading ? 'Saving...' : (item ? 'Update' : 'Create')}
             </button>
           </div>
-        </div>
-
-        {/* Form */}
-        <div className="p-6">
+      )}>
           {/* Image Upload */}
           {(type === 'project' || type === 'event' || type === 'blog' || type === 'team') && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Featured Image</label>
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Featured Image</label>
               <div className="flex items-center space-x-4">
-                <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
                   {previewImage ? (
                     <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
@@ -270,14 +272,14 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
           )}
 
           {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {config.fields.map(field => {
               const colClass = field.col === 'full' ? 'md:col-span-2' : 'md:col-span-1';
 
               if (field.type === 'textarea') {
                 return (
                   <div key={field.name} className={colClass}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
                     <textarea
@@ -295,20 +297,16 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
               if (field.type === 'select') {
                 return (
                   <div key={field.name} className={colClass}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
-                    <select
+                    <CommonSelect
                       name={field.name}
+                      label={field.label}
                       value={formData[field.name] || ''}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-                    >
-                      <option value="">Select {field.label}</option>
-                      {field.options.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
+                      onChange={(value) => setFormData((previous) => ({ ...previous, [field.name]: value }))}
+                      options={[{ value: '', label: `Select ${field.label}` }, ...field.options]}
+                    />
                   </div>
                 );
               }
@@ -316,7 +314,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
               if (field.type === 'list') {
                 return (
                   <div key={field.name} className={colClass}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       {field.label}
                     </label>
                     <div className="space-y-2">
@@ -352,7 +350,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
               if (field.type === 'tags') {
                 return (
                   <div key={field.name} className={colClass}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       {field.label}
                     </label>
                     <input
@@ -373,7 +371,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
               if (field.type === 'keyvalue') {
                 return (
                   <div key={field.name} className={colClass}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       {field.label}
                     </label>
                     <div className="space-y-2">
@@ -422,7 +420,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
               // Default input field
               return (
                 <div key={field.name} className={colClass}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     {field.label} {field.required && <span className="text-red-500">*</span>}
                   </label>
                   <input
@@ -440,26 +438,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
             })}
           </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center"
-            >
-              <FiSave className="mr-2" />
-              {loading ? 'Saving...' : (item ? 'Update' : 'Create')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </CommonPopup>
   );
 };
 

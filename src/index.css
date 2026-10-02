@@ -37,6 +37,55 @@
 }
 
 @layer components {
+  .common-popup-body label {
+    @apply text-xs font-medium;
+  }
+
+  .common-popup-body input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  .common-popup-body select,
+  .common-popup-body textarea {
+    @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm leading-5 text-slate-800 shadow-sm;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .common-popup-body input:not([type='checkbox']):not([type='radio']):not([type='file']):hover,
+  .common-popup-body select:hover,
+  .common-popup-body textarea:hover {
+    @apply border-slate-300 bg-white;
+  }
+
+  .common-popup-body input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+  .common-popup-body select:focus,
+  .common-popup-body textarea:focus {
+    @apply border-primary-500 bg-white outline-none;
+    box-shadow: 0 0 0 3px rgba(27, 115, 111, 0.12);
+  }
+
+  .common-popup-body input::placeholder,
+  .common-popup-body textarea::placeholder {
+    @apply text-slate-400;
+  }
+
+  .common-popup-body input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  .common-popup-body select {
+    height: 34px;
+  }
+
+  .common-popup-body textarea {
+    @apply resize-y;
+    height: 100px;
+    min-height: 100px;
+    max-height: 105px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(27, 115, 111, 0.35) transparent;
+  }
+
+  .common-popup-footer button {
+    @apply rounded px-3 py-1.5 text-xs font-medium;
+    min-height: 32px;
+  }
+
   .admin-table-scroll {
     scrollbar-width: thin;
     scrollbar-color: rgba(27, 115, 111, 0.35) transparent;

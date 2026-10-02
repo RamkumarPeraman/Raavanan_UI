@@ -50,7 +50,7 @@ function AppLayout() {
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin'].includes(location.pathname);
 
   return (
-    <div className={isAdminDashboard ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}>
+    <div className={isAdminDashboard ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
       <div className={isAdminDashboard ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>

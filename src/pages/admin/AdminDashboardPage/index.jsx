@@ -1,3 +1,6 @@
+import AdminRecordCard from '../../../components/admin/AdminRecordCard';
+import CommonSelect from '../../../components/common/CommonSelect';
+import CommonPopup from '../../../components/common/CommonPopup';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FiBriefcase, FiCalendar, FiFileText, FiEdit3, FiBookOpen, FiUsers, FiClipboard, FiCreditCard,
@@ -981,7 +984,7 @@ const AdminDashboardPage = () => {
 
   const renderDashboardTabs = (showToolbar = false, trailingAction = null) => (
     <div className="mb-4 flex shrink-0 flex-wrap items-center gap-2">
-    <nav aria-label="Admin sections" className="flex min-w-0 w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-1">
+    <nav aria-label="Admin sections" className="admin-table-scroll flex min-w-0 w-full items-center gap-1.5 overflow-x-auto pb-1 lg:w-auto lg:flex-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
       {contentTypes.map((type) => (
         <button
           key={type.id}
@@ -1062,18 +1065,27 @@ const AdminDashboardPage = () => {
   if (activeTab === 'donationSettings') {
     return (
       <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
-        <div className="w-full flex-1 overflow-y-auto px-[5px]">
-          {renderDashboardTabs()}
-          <PaymentSettingsPanel
-            loading={settingsLoading}
-            saving={settingsSaving}
-            qrImage={qrImage}
-            onQrChange={handleQrFileChange}
-            onQrRemove={() => setQrImage('')}
-            bankDetails={bankDetails}
-            onBankChange={(key, value) => setBankDetails((previous) => ({ ...previous, [key]: value }))}
-            onSave={handleSaveSettings}
-          />
+        <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
+          {renderDashboardTabs(false, (
+            <button
+              type="button"
+              onClick={handleSaveSettings}
+              disabled={settingsSaving || settingsLoading}
+              className="inline-flex h-8 shrink-0 items-center rounded-md bg-primary-600 px-2.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {settingsSaving ? 'Saving...' : 'Save Payment Settings'}
+            </button>
+          ))}
+          <div className="admin-table-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[5px]">
+            <PaymentSettingsPanel
+              loading={settingsLoading}
+              qrImage={qrImage}
+              onQrChange={handleQrFileChange}
+              onQrRemove={() => setQrImage('')}
+              bankDetails={bankDetails}
+              onBankChange={(key, value) => setBankDetails((previous) => ({ ...previous, [key]: value }))}
+            />
+          </div>
         </div>
       </div>
     );
@@ -1286,12 +1298,7 @@ const AdminDashboardPage = () => {
           )}
         </div>
         {previewSlide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewSlideId(null)}>
-            <div role="dialog" aria-modal="true" aria-labelledby="hero-preview-title" onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <h2 id="hero-preview-title" className="text-sm font-semibold text-gray-900">Slide {previewSlideIndex + 1} Preview</h2>
-                <button type="button" onClick={() => setPreviewSlideId(null)} aria-label="Close preview" className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100"><FiX aria-hidden="true" /></button>
-              </div>
+          <CommonPopup title={`Slide ${previewSlideIndex + 1} Preview`} onClose={() => setPreviewSlideId(null)} size="lg">
               <div className="relative flex min-h-[320px] items-end overflow-hidden bg-[#0f2f2f] text-white sm:min-h-[440px]">
                 <PreviewImage src={previewSlide.image} fallbackSrc={getFallbackHeroImage(previewSlideIndex)} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#082629]/95 via-[#082629]/75 to-[#082629]/30" />
@@ -1303,132 +1310,13 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
               {previewSlide.link && <p className="break-all px-4 py-3 text-xs text-gray-600">Button link: {previewSlide.link}</p>}
-            </div>
-          </div>
+          </CommonPopup>
         )}
       </div>
     );
   }
 
-  // ---- Main Dashboard ----
-  return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
-      <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
-        {renderDashboardTabs(true)}
-
-        {/* Table */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-lg bg-white shadow-lg">
-          {loading ? (
-            <div className="flex min-h-0 flex-1 items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="min-h-0 flex-1 py-12 text-center">
-              <FiFileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">No {activeTab} yet</h3>
-              <p className="text-gray-500 mb-4">
-                {activeTab === 'volunteerApplications' ? 'No volunteer applications found.' : activeTab === 'donations' ? 'No donations recorded yet.' : 'Create your first item.'}
-              </p>
-              {!isSpecialTab && (
-                <button onClick={handleAdd} className="btn-primary"><FiPlus className="inline mr-2" />Add New</button>
-              )}
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1 overflow-x-auto">
-              <div className="flex h-full min-w-[900px] flex-col">
-                <table className="w-full table-fixed border-b border-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {tableColumns[activeTab].map((column) => (
-                      <th key={column} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {column === 'createdAt' ? 'Date' : column.replace(/([A-Z])/g, ' $1').trim()}
-                      </th>
-                    ))}
-                    {activeTab === 'donations' && (
-                      <>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Screenshot</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </>
-                    )}
-                    {activeTab !== 'donations' && (
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    )}
-                  </tr>
-                </thead>
-                </table>
-                <div className="admin-table-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                <table className="w-full table-fixed">
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredItems.map((item, idx) => (
-                    <tr key={item._id || item.id || idx} className="hover:bg-gray-50">
-                      {tableColumns[activeTab].map((column) => (
-                        <td
-                          key={column}
-                          className="max-w-0 truncate px-6 py-4 text-sm text-gray-900"
-                          data-tooltip={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
-                        >
-                          {renderCell(column, item[column])}
-                        </td>
-                      ))}
-                      {activeTab === 'donations' && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {item.paymentScreenshot ? (
-                            <button
-                              type="button"
-                              onClick={() => setScreenshotModal(item.paymentScreenshot)}
-                              className="flex items-center gap-1 text-primary-600 hover:text-primary-800 text-xs font-medium"
-                              data-tooltip="View screenshot"
-                            >
-                              <FiEye size={14} />
-                              View
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 text-xs">None</span>
-                          )}
-                        </td>
-                      )}
-                      {activeTab === 'donations' && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            {item.paymentStatus === 'pending' ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleAcceptDonation(item)}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-green-700 hover:bg-green-100 hover:text-green-900"
-                                  data-tooltip="Approve donation"
-                                  aria-label={`Approve donation from ${item.name || 'donor'}`}
-                                >
-                                  <FiCheckCircle size={16} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRejectDonation(item)}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 hover:bg-red-100 hover:text-red-900"
-                                  data-tooltip="Reject donation"
-                                  aria-label={`Reject donation from ${item.name || 'donor'}`}
-                                >
-                                  <FiXCircle size={16} />
-                                </button>
-                              </>
-                            ) : (
-                              <span
-                                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                                  item.paymentStatus === 'accepted'
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'bg-red-50 text-red-600'
-                                }`}
-                              >
-                                {item.paymentStatus === 'accepted' ? <FiCheck size={12} /> : <FiX size={12} />}
-                                {item.paymentStatus === 'accepted' ? 'Approved' : 'Rejected'}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {activeTab === 'volunteerApplications' ? (
+  const renderRecordActions = (item) => (<> {activeTab === 'volunteerApplications' ? (
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => openVolunteerModal(item, 'view')}
@@ -1471,7 +1359,143 @@ const AdminDashboardPage = () => {
                             <button onClick={() => handleEdit(item)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 hover:bg-blue-100 hover:text-blue-900" data-tooltip="Edit" aria-label="Edit item"><FiEdit2 size={16} /></button>
                             <button onClick={() => handleDelete(item)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-600 hover:bg-red-100 hover:text-red-900" data-tooltip="Delete" aria-label="Delete item"><FiTrash2 size={16} /></button>
                           </div>
-                        )}
+                        )} </>);
+
+  // ---- Main Dashboard ----
+  return (
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
+      <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
+        {renderDashboardTabs(true)}
+
+        {/* Table */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-lg bg-white shadow-lg">
+          {loading ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="min-h-0 flex-1 py-12 text-center">
+              <FiFileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">No {activeTab} yet</h3>
+              <p className="text-gray-500 mb-4">
+                {activeTab === 'volunteerApplications' ? 'No volunteer applications found.' : activeTab === 'donations' ? 'No donations recorded yet.' : 'Create your first item.'}
+              </p>
+              {!isSpecialTab && (
+                <button onClick={handleAdd} className="btn-primary"><FiPlus className="inline mr-2" />Add New</button>
+              )}
+            </div>
+          ) : (
+            <>
+            <div className="admin-table-scroll min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-50 p-2 lg:hidden">
+              {filteredItems.map((item, index) => (
+                <AdminRecordCard key={item._id || item.id || index} item={item} columns={tableColumns[activeTab]} renderCell={renderCell} actions={<>
+                  <div className="flex items-center gap-1">
+                    {activeTab === 'donations' && item.paymentScreenshot && <button type="button" aria-label="View payment screenshot" onClick={() => setScreenshotModal(item.paymentScreenshot)} className="flex h-9 w-9 items-center justify-center rounded text-primary-700 hover:bg-primary-50"><FiEye size={16} /></button>}
+                    {activeTab === 'donations' && item.paymentStatus === 'pending' && <>
+                      <button type="button" aria-label="Approve donation" onClick={() => handleAcceptDonation(item)} className="flex h-9 w-9 items-center justify-center rounded text-green-700 hover:bg-green-50"><FiCheckCircle size={16} /></button>
+                      <button type="button" aria-label="Reject donation" onClick={() => handleRejectDonation(item)} className="flex h-9 w-9 items-center justify-center rounded text-red-700 hover:bg-red-50"><FiXCircle size={16} /></button>
+                    </>}
+                  </div>
+                  {renderRecordActions(item)}
+                </>} />
+              ))}
+            </div>
+            <div className="admin-records hidden min-h-0 flex-1 overflow-x-auto lg:block">
+              <div className="admin-records-layout flex h-full min-w-[900px] flex-col">
+                <table className="admin-records-header w-full table-fixed border-b border-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {tableColumns[activeTab].map((column) => (
+                      <th key={column} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {column === 'createdAt' ? 'Date' : column.replace(/([A-Z])/g, ' $1').trim()}
+                      </th>
+                    ))}
+                    {activeTab === 'donations' && (
+                      <>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Screenshot</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </>
+                    )}
+                    {activeTab !== 'donations' && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    )}
+                  </tr>
+                </thead>
+                </table>
+                <div className="admin-table-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <table className="admin-records-body w-full table-fixed">
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredItems.map((item, idx) => (
+                    <tr key={item._id || item.id || idx} className="hover:bg-gray-50">
+                      {tableColumns[activeTab].map((column) => (
+                        <td
+                          key={column}
+                          data-label={column === 'createdAt' ? 'Date' : column.replace(/([A-Z])/g, ' $1').trim()}
+                          className="max-w-0 truncate px-6 py-4 text-sm text-gray-900"
+                          data-tooltip={typeof item[column] === 'string' ? item[column] : Array.isArray(item[column]) ? item[column].join(', ') : undefined}
+                        >
+                          {renderCell(column, item[column])}
+                        </td>
+                      ))}
+                      {activeTab === 'donations' && (
+                        <td data-label="Screenshot" className="px-6 py-4 whitespace-nowrap text-sm">
+                          {item.paymentScreenshot ? (
+                            <button
+                              type="button"
+                              onClick={() => setScreenshotModal(item.paymentScreenshot)}
+                              className="flex items-center gap-1 text-primary-600 hover:text-primary-800 text-xs font-medium"
+                              data-tooltip="View screenshot"
+                            >
+                              <FiEye size={14} />
+                              View
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 text-xs">None</span>
+                          )}
+                        </td>
+                      )}
+                      {activeTab === 'donations' && (
+                        <td data-label="Status" className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            {item.paymentStatus === 'pending' ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAcceptDonation(item)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-green-700 hover:bg-green-100 hover:text-green-900"
+                                  data-tooltip="Approve donation"
+                                  aria-label={`Approve donation from ${item.name || 'donor'}`}
+                                >
+                                  <FiCheckCircle size={16} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectDonation(item)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 hover:bg-red-100 hover:text-red-900"
+                                  data-tooltip="Reject donation"
+                                  aria-label={`Reject donation from ${item.name || 'donor'}`}
+                                >
+                                  <FiXCircle size={16} />
+                                </button>
+                              </>
+                            ) : (
+                              <span
+                                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                                  item.paymentStatus === 'accepted'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-red-50 text-red-600'
+                                }`}
+                              >
+                                {item.paymentStatus === 'accepted' ? <FiCheck size={12} /> : <FiX size={12} />}
+                                {item.paymentStatus === 'accepted' ? 'Approved' : 'Rejected'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                      <td data-label="Actions" className="admin-record-actions px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {renderRecordActions(item)}
                       </td>
                     </tr>
                   ))}
@@ -1480,6 +1504,7 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
             </div>
+            </>
           )}
           <Pagination
             page={page}
@@ -1502,97 +1527,9 @@ const AdminDashboardPage = () => {
         )}
 
         {volunteerModalMode && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-            onClick={closeVolunteerModal}
-          >
-            <div
-              className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {volunteerModalMode === 'edit' ? 'Edit Volunteer Application' : 'View Volunteer Application'}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {selectedVolunteer?.fullName || 'Volunteer details'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeVolunteerModal}
-                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                >
-                  <FiX size={18} />
-                </button>
-              </div>
-
-              <div className="max-h-[calc(90vh-150px)] overflow-y-auto px-6 py-5">
-                {volunteerModalLoading && !selectedVolunteer ? (
-                  <div className="flex h-48 items-center justify-center">
-                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                    {selectedVolunteerFields.map((field) => {
-                      const inputType = getVolunteerInputType(field, selectedVolunteer?.[field]);
-                      const isFullWidth = inputType === 'textarea';
-                      const label = VOLUNTEER_FIELD_LABELS[field] || field.replace(/([A-Z])/g, ' $1').trim();
-
-                      return (
-                        <div key={field} className={isFullWidth ? 'md:col-span-2' : ''}>
-                          <label className="mb-1 block text-sm font-semibold text-gray-700">{label}</label>
-
-                          {volunteerModalMode === 'edit' && field !== 'createdAt' && field !== 'updatedAt' ? (
-                            inputType === 'checkbox' ? (
-                              <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-700">
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean(volunteerFormData[field])}
-                                  onChange={(e) => handleVolunteerFieldChange(field, e.target.checked)}
-                                  className="h-4 w-4 rounded border-gray-300 text-primary-600"
-                                />
-                                <span>{label}</span>
-                              </label>
-                            ) : inputType === 'select' ? (
-                              <select
-                                value={volunteerFormData[field] || 'pending'}
-                                onChange={(e) => handleVolunteerFieldChange(field, e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                              </select>
-                            ) : inputType === 'textarea' ? (
-                              <textarea
-                                rows={field === 'availability' || typeof selectedVolunteer?.[field] === 'object' ? 5 : 4}
-                                value={volunteerFormData[field] || ''}
-                                onChange={(e) => handleVolunteerFieldChange(field, e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                              />
-                            ) : (
-                              <input
-                                type={inputType}
-                                value={volunteerFormData[field] || ''}
-                                onChange={(e) => handleVolunteerFieldChange(field, e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                              />
-                            )
-                          ) : (
-                            <div className="min-h-[48px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap break-words">
-                              {formatVolunteerFieldValue(selectedVolunteer?.[field], field)}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
+          <CommonPopup title={volunteerModalMode === 'edit' ? 'Edit Volunteer Application' : 'View Volunteer Application'} description={selectedVolunteer?.fullName || 'Volunteer details'} onClose={closeVolunteerModal} busy={volunteerModalLoading}
+            footer={(
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                   {volunteerModalMode === 'view' && selectedVolunteer && (
                     <>
@@ -1644,69 +1581,72 @@ const AdminDashboardPage = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+            )}>
+            {volunteerModalLoading && !selectedVolunteer ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {selectedVolunteerFields.map((field) => {
+                      const inputType = getVolunteerInputType(field, selectedVolunteer?.[field]);
+                      const isFullWidth = inputType === 'textarea';
+                      const label = VOLUNTEER_FIELD_LABELS[field] || field.replace(/([A-Z])/g, ' $1').trim();
+
+                      return (
+                        <div key={field} className={isFullWidth ? 'md:col-span-2' : ''}>
+                          <label className="mb-1 block text-sm font-semibold text-gray-700">{label}</label>
+
+                          {volunteerModalMode === 'edit' && field !== 'createdAt' && field !== 'updatedAt' ? (
+                            inputType === 'checkbox' ? (
+                              <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(volunteerFormData[field])}
+                                  onChange={(e) => handleVolunteerFieldChange(field, e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300 text-primary-600"
+                                />
+                                <span>{label}</span>
+                              </label>
+                            ) : inputType === 'select' ? (
+                              <CommonSelect
+                                label={label}
+                                value={volunteerFormData[field] || 'pending'}
+                                onChange={(value) => handleVolunteerFieldChange(field, value)}
+                                options={[{ value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }]}
+                              />
+                            ) : inputType === 'textarea' ? (
+                              <textarea
+                                rows={field === 'availability' || typeof selectedVolunteer?.[field] === 'object' ? 5 : 4}
+                                value={volunteerFormData[field] || ''}
+                                onChange={(e) => handleVolunteerFieldChange(field, e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
+                              />
+                            ) : (
+                              <input
+                                type={inputType}
+                                value={volunteerFormData[field] || ''}
+                                onChange={(e) => handleVolunteerFieldChange(field, e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
+                              />
+                            )
+                          ) : (
+                            <div className="min-h-[34px] rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700 whitespace-pre-wrap break-words">
+                              {formatVolunteerFieldValue(selectedVolunteer?.[field], field)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+          </CommonPopup>
         )}
 
         {donationModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-            onClick={closeDonationModal}
-          >
-            <div
-              className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Edit Donation</h3>
-                  <p className="mt-1 text-sm text-gray-500">{selectedDonation?.name || 'Donation record'}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeDonationModal}
-                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                >
-                  <FiX size={18} />
-                </button>
-              </div>
-
-              <div className="max-h-[calc(90vh-150px)] overflow-y-auto px-6 py-5">
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  {DONATION_EDIT_FIELDS.map((field) => (
-                    <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                      <label className="mb-1 block text-sm font-semibold text-gray-700">{field.label}</label>
-                      {field.type === 'textarea' ? (
-                        <textarea
-                          rows={4}
-                          value={donationFormData[field.key] || ''}
-                          onChange={(e) => handleDonationFieldChange(field.key, e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                        />
-                      ) : field.type === 'select' ? (
-                        <select
-                          value={donationFormData[field.key] || field.options?.[0] || ''}
-                          onChange={(e) => handleDonationFieldChange(field.key, e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                        >
-                          {field.options.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={field.type}
-                          value={donationFormData[field.key] || ''}
-                          onChange={(e) => handleDonationFieldChange(field.key, e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+          <CommonPopup title="Edit Donation" description={selectedDonation?.name || 'Donation record'} onClose={closeDonationModal} busy={donationModalLoading}
+            footer={(
+              <div className="flex items-center justify-end gap-2 ">
                 <button
                   type="button"
                   onClick={closeDonationModal}
@@ -1723,26 +1663,47 @@ const AdminDashboardPage = () => {
                   {donationModalLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
-            </div>
-          </div>
+            )}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {DONATION_EDIT_FIELDS.map((field) => (
+                    <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                      <label htmlFor={`donation-${field.key}`} className="mb-1 block text-sm font-semibold text-gray-700">{field.label}</label>
+                      {field.type === 'textarea' ? (
+                        <textarea
+                          id={`donation-${field.key}`}
+                          rows={4}
+                          value={donationFormData[field.key] || ''}
+                          onChange={(e) => handleDonationFieldChange(field.key, e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
+                        />
+                      ) : field.type === 'select' ? (
+                        <CommonSelect
+                          id={`donation-${field.key}`}
+                          label={field.label}
+                          value={donationFormData[field.key] || field.options?.[0] || ''}
+                          onChange={(value) => handleDonationFieldChange(field.key, value)}
+                          options={field.options}
+                        />
+                      ) : (
+                        <input
+                          id={`donation-${field.key}`}
+                          type={field.type}
+                          value={donationFormData[field.key] || ''}
+                          onChange={(e) => handleDonationFieldChange(field.key, e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+          </CommonPopup>
         )}
 
         {/* Screenshot Modal */}
         {screenshotModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
-            onClick={() => setScreenshotModal(null)}
-          >
-            <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => setScreenshotModal(null)}
-                className="absolute -top-4 -right-4 bg-white text-gray-800 rounded-full p-2 hover:bg-gray-100 shadow-lg z-10"
-              >
-                <FiX size={18} />
-              </button>
-              <img src={screenshotModal} alt="Payment Screenshot" className="w-full max-h-[80vh] object-contain rounded-lg shadow-xl" />
-            </div>
-          </div>
+          <CommonPopup title="Payment Screenshot" onClose={() => setScreenshotModal(null)}>
+            <img src={screenshotModal} alt="Payment Screenshot" className="mx-auto max-h-[70dvh] w-full object-contain" />
+          </CommonPopup>
         )}
       </div>
     </div>
