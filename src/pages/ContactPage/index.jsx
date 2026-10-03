@@ -106,7 +106,7 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="pt-24 pb-10 min-h-screen bg-gray-50">
+    <div className="pt-6 pb-10 bg-gray-50">
       <div className="container-custom">
         {/* Header */}
         <div className="mb-6">

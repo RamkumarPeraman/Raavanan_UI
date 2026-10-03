@@ -49,14 +49,16 @@ function ScrollToTop() {
 function AppLayout() {
   const location = useLocation();
   const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
+  const isContactPage = location.pathname === '/contact';
+  const isViewportPage = isFullHeightPage || isContactPage;
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
 
   return (
-    <div className={isFullHeightPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
+    <div className={isViewportPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
-      <div className={isFullHeightPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main className={isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+      <div className={isViewportPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
+        <main key={location.pathname} className={isContactPage ? 'mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]' : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}
@@ -120,8 +122,9 @@ function AppLayout() {
           } />
           </Routes>
           </PageAccessGate>
+          {isContactPage && <Footer />}
         </main>
-        {!hideFooter && <Footer />}
+        {!hideFooter && !isContactPage && <Footer />}
       </div>
       <ToastContainer position="top-right" autoClose={5000} />
       <CommonTooltip />
