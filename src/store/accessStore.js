@@ -1,6 +1,27 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import apiService from '../services/api';
 import paymentSettingsReducer from './paymentSettingsStore';
+import { ACCESS_CACHE_KEY } from '../constants/accessCache';
+
+const readCachedAccess = (session) => {
+  try {
+    const cached = JSON.parse(localStorage.getItem(ACCESS_CACHE_KEY) || 'null');
+    if (cached?.token === session.token && cached.userId === session.userId && cached.role === session.role && Array.isArray(cached.permissions)) {
+      return cached.permissions;
+    }
+  } catch { /* Ignore an invalid or unavailable cache. */ }
+  return null;
+};
+
+const saveCachedAccess = (session, permissions) => {
+  try {
+    localStorage.setItem(ACCESS_CACHE_KEY, JSON.stringify({ ...session, permissions }));
+  } catch { /* Access remains available in Redux for this page load. */ }
+};
+
+const clearCachedAccess = () => {
+  try { localStorage.removeItem(ACCESS_CACHE_KEY); } catch { /* Storage may be unavailable. */ }
+};
 
 const accessSlice = createSlice({
   name: 'access',
@@ -59,17 +80,29 @@ export const ensureAccess = () => (dispatch, getState) => {
   dispatch(sessionChanged(session));
   if (!session.token) {
     inFlight = null;
+    clearCachedAccess();
     return Promise.resolve([]);
   }
   const access = getState().access;
   if (access.status === 'ready') return Promise.resolve(access.permissions);
   if (inFlight?.token === session.token && inFlight.version === access.version) return inFlight.promise;
 
+  if (access.status === 'idle') {
+    const cachedPermissions = readCachedAccess(session);
+    if (cachedPermissions) {
+      dispatch(accessReceived({ token: session.token, version: access.version, permissions: cachedPermissions }));
+      return Promise.resolve(cachedPermissions);
+    }
+  }
+
   dispatch(accessRequested({ token: session.token, version: access.version }));
   const promise = apiService.getMyRoleAccess()
     .then(result => {
       const permissions = Array.isArray(result.permissions) ? result.permissions : [];
       dispatch(accessReceived({ token: session.token, version: access.version, permissions }));
+      if (getState().access.token === session.token && getState().access.version === access.version) {
+        saveCachedAccess(session, permissions);
+      }
       return permissions;
     })
     .catch(error => {
@@ -85,6 +118,7 @@ export const ensureAccess = () => (dispatch, getState) => {
 
 export const syncAccessSession = () => dispatch => dispatch(ensureAccess());
 export const refreshAccess = () => dispatch => {
+  clearCachedAccess();
   dispatch(accessInvalidated());
   return dispatch(ensureAccess());
 };

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import config from '../config';
 import * as mockData from './mockData';
+import { ACCESS_CACHE_KEY } from '../constants/accessCache';
 
 export const defaultBankDetails = {
   accountHolder: 'Partha Sarathi V',
@@ -120,6 +121,7 @@ const persistAuth = (payload, fallbackUserType = 'user') => {
   const data = payload?.data && (payload?.data?.token || payload?.data?.user) ? payload.data : payload;
 
   if (data?.token) {
+    if (data.token !== localStorage.getItem('authToken')) localStorage.removeItem(ACCESS_CACHE_KEY);
     localStorage.setItem('authToken', data.token);
   }
 
@@ -140,6 +142,7 @@ const persistAuth = (payload, fallbackUserType = 'user') => {
 };
 
 const clearAuth = () => {
+  localStorage.removeItem(ACCESS_CACHE_KEY);
   localStorage.removeItem('authToken');
   localStorage.removeItem('userType');
   localStorage.removeItem('user');
@@ -600,6 +603,7 @@ const apiService = {
       // Render can take about a minute to resume an idle service.
       // Submit credentials once; do not retry authentication automatically.
       const response = await api.post('/auth/login', credentials, { timeout: 90000 });
+      localStorage.removeItem(ACCESS_CACHE_KEY);
       return persistAuth(response.data, credentials.userType || 'user');
     } catch (error) {
       throwApiError(error);
