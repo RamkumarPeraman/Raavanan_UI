@@ -15,7 +15,7 @@ const PaymentSettingsPanel = ({ loading, qrImage, onQrChange, onQrRemove, bankDe
   const qrFileRef = useRef(null);
 
   if (loading) {
-    return <div className="flex min-h-full items-center justify-center"><CommonLoader size="sm" /></div>;
+    return <div className="flex min-h-full w-full items-center justify-center"><CommonLoader size="lg" label="Loading payment settings…" showLabel /></div>;
   }
 
   const removeQrImage = () => {

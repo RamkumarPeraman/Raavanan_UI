@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { FiEdit2, FiPlus, FiTrash2, FiShield } from 'react-icons/fi';
 import CommonPopup from '../../components/common/CommonPopup';
+import CommonLoader from '../../components/common/CommonLoader';
 import Pagination from '../../components/common/Pagination';
 import apiService from '../../services/api';
 import { refreshAccess } from '../../store/accessStore';
@@ -157,7 +158,7 @@ const RolesManagementPage = () => {
           )}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
-        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center text-gray-500">Loading roles...</div>
+        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader size="lg" label="Loading roles…" showLabel /></div>
           : loadError ? <div className="flex min-h-0 flex-1 items-center justify-center text-gray-600">Could not load roles. <button onClick={fetchRoles} className="ml-1 text-primary-700 underline">Retry</button></div>
             : roles.length === 0 ? <div className="flex min-h-0 flex-1 items-center justify-center text-gray-500">No roles found</div>
               : <>
