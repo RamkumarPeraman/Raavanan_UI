@@ -1,570 +1,163 @@
-import CommonLoader from '../../components/common/CommonLoader';
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  FiHeart, FiUsers, FiMapPin, FiCalendar,
-  FiFilter, FiSearch, FiCheckCircle, FiClock, FiBarChart2,
-  FiDownload, FiEye, FiAward, FiTarget
-} from 'react-icons/fi';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { FiCheckCircle, FiClock, FiEye, FiFilter, FiSearch, FiTarget, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import CommonLoader from '../../components/common/CommonLoader';
+import CommonPopup from '../../components/common/CommonPopup';
+import CommonSelect from '../../components/common/CommonSelect';
+import Pagination from '../../components/common/Pagination';
 import apiService from '../../services/api';
 
-const defaultImpactMetrics = {
-  totalProjects: 25,
-  ongoingProjects: 12,
-  completedProjects: 13,
-  livesImpacted: 15000,
-  volunteersEngaged: 800,
-  statesReached: 10,
-};
-
-const getProjectStatusLabel = (status) => {
-  if (status === 'ongoing') {
-    return 'Ongoing';
-  }
-
-  if (status === 'planned') {
-    return 'Planned';
-  }
-
-  return 'Completed';
-};
-
-const getProjectStatusClass = (status) => {
-  if (status === 'ongoing') {
-    return 'bg-green-100 text-green-800';
-  }
-
-  if (status === 'planned') {
-    return 'bg-yellow-100 text-yellow-800';
-  }
-
-  return 'bg-gray-100 text-gray-800';
-};
+const emptyMetrics = { totalProjects: 0, ongoingProjects: 0, completedProjects: 0 };
+const statusLabel = status => ({ ongoing: 'Ongoing', planned: 'Planned', completed: 'Completed' })[status] || 'Unknown';
+const statusClass = status => ({ ongoing: 'bg-green-100 text-green-800', planned: 'bg-yellow-100 text-yellow-800', completed: 'bg-slate-100 text-slate-700' })[status] || 'bg-gray-100 text-gray-700';
+const dateLabel = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleDateString('en-GB') : '—';
+const numberLabel = value => Number(value || 0).toLocaleString('en-IN');
+const moneyLabel = value => `₹${numberLabel(value)}`;
+const projectId = project => project?.id || project?._id;
 
 const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
-  const [impactMetrics, setImpactMetrics] = useState(defaultImpactMetrics);
+  const [metrics, setMetrics] = useState(emptyMetrics);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('ongoing');
+  const [draftFilters, setDraftFilters] = useState({ category: 'all', status: 'ongoing' });
+  const [filterPosition, setFilterPosition] = useState(null);
+  const filterButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-  // Categories
-  const categories = [
-    'All',
-    'Education',
-    'Healthcare',
-    'Women Empowerment',
-    'Child Welfare',
-    'Environment',
-    'Skill Development',
-    'Community Development',
-  ];
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    let filtered = [...projects];
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p =>
-        p.category?.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(p => p.status === selectedStatus);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(p =>
-        p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredProjects(filtered);
-  }, [projects, selectedCategory, selectedStatus, searchTerm]);
 
   const fetchProjects = async () => {
-    try {
-      const [projectData, metricsData] = await Promise.all([
-        apiService.getProjects(),
-        apiService.getProjectMetrics(),
-      ]);
-      setProjects(projectData);
-      setFilteredProjects(projectData);
-      setImpactMetrics(metricsData || defaultImpactMetrics);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Unable to load projects right now');
-    } finally {
-      setLoading(false);
-    }
+    const [projectResult, metricResult] = await Promise.allSettled([apiService.getProjects(), apiService.getProjectMetrics()]);
+    if (projectResult.status === 'fulfilled') setProjects(projectResult.value);
+    else { setLoadError(true); toast.error(projectResult.reason?.message || 'Unable to load projects'); }
+    if (metricResult.status === 'fulfilled') setMetrics(metricResult.value || emptyMetrics);
+    setLoading(false);
   };
 
-  const filterProjects = () => {
-    let filtered = [...projects];
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => 
-        p.category?.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
-    // Filter by status
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(p => p.status === selectedStatus);
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(p => 
-        p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredProjects(filtered);
+  const loadProjects = () => {
+    setLoading(true);
+    setLoadError(false);
+    void fetchProjects();
   };
 
-  const handleViewProject = (project) => {
+  useEffect(() => { void fetchProjects(); }, []);
+
+  const openFilters = () => {
+    if (filterPosition) { setFilterPosition(null); return; }
+    setDraftFilters({ category, status });
+    const rect = filterButtonRef.current.getBoundingClientRect();
+    setFilterPosition({ top: Math.min(rect.bottom + 6, Math.max(8, window.innerHeight - 260)), left: Math.max(8, Math.min(rect.left, window.innerWidth - 304)) });
+  };
+
+  useEffect(() => {
+    if (!filterPosition) return undefined;
+    const dismiss = event => {
+      if (!filterPanelRef.current?.contains(event.target) && !filterButtonRef.current?.contains(event.target) && !event.target.closest?.('[role="listbox"]')) setFilterPosition(null);
+    };
+    const keydown = event => { if (event.key === 'Escape') { setFilterPosition(null); filterButtonRef.current?.focus(); } };
+    const close = () => setFilterPosition(null);
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', keydown);
+    window.addEventListener('resize', close);
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', keydown); window.removeEventListener('resize', close); };
+  }, [filterPosition]);
+
+  const categories = useMemo(() => [...new Set(projects.map(project => project.category).filter(Boolean))].sort(), [projects]);
+  const filteredProjects = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return projects.filter(project =>
+      (category === 'all' || project.category?.toLowerCase() === category)
+      && (status === 'all' || project.status === status)
+      && (!query || [project.title, project.description, project.location].some(value => value?.toLowerCase().includes(query))));
+  }, [projects, category, status, search]);
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filteredProjects.length / pageSize)));
+  const visibleProjects = filteredProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const viewProject = project => {
     setSelectedProject(project);
-    setShowModal(true);
+    const id = projectId(project);
+    if (!id) return;
+    apiService.getProjectById(id).then(details => {
+      setSelectedProject(previous => projectId(previous) === id ? details : previous);
+    }).catch(() => toast.error('Could not load additional project details'));
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedProject(null);
+  const selectSummary = nextStatus => {
+    setCategory('all');
+    setStatus(nextStatus);
+    setPage(1);
+    setFilterPosition(null);
   };
 
-  const downloadReport = (project) => {
-    if (project?.reportUrl) {
-      window.open(project.reportUrl, '_blank', 'noopener,noreferrer');
-      toast.success('Opening project report');
-      return;
-    }
-
-    toast.info('Report will be available soon');
-  };
-
-  if (loading) return (
-    <div className="flex min-h-[60dvh] items-center justify-center bg-gray-50 pt-20">
-      <CommonLoader size="lg" label="Loading projects…" showLabel />
-    </div>
-  );
+  const metricItems = [
+    { icon: FiTarget, label: 'Total Projects', value: metrics.totalProjects, filter: 'all', color: 'border-blue-200 bg-blue-50 text-blue-700' },
+    { icon: FiClock, label: 'Ongoing', value: metrics.ongoingProjects, filter: 'ongoing', color: 'border-green-200 bg-green-50 text-green-700' },
+    { icon: FiCheckCircle, label: 'Completed', value: metrics.completedProjects, filter: 'completed', color: 'border-purple-200 bg-purple-50 text-purple-700' },
+  ];
 
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-      <div className="container-custom">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Our Projects</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover how we're making a difference through our various initiatives 
-            across India. From education to healthcare, every project creates lasting impact.
-          </p>
-        </div>
-
-        {/* Impact Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-          {[
-            { icon: FiTarget, label: 'Total Projects', value: impactMetrics.totalProjects },
-            { icon: FiClock, label: 'Ongoing', value: impactMetrics.ongoingProjects },
-            { icon: FiCheckCircle, label: 'Completed', value: impactMetrics.completedProjects },
-            { icon: FiHeart, label: 'Lives Impacted', value: impactMetrics.livesImpacted.toLocaleString() },
-            { icon: FiUsers, label: 'Volunteers', value: impactMetrics.volunteersEngaged.toLocaleString() },
-            { icon: FiMapPin, label: 'States', value: impactMetrics.statesReached },
-          ].map((metric, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-4 text-center">
-              <metric.icon className="w-6 h-6 text-primary-600 mx-auto mb-2" />
-              <div className="text-lg font-bold text-gray-900">{metric.value}</div>
-              <div className="text-xs text-gray-600">{metric.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="md:w-48">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-              >
-                <option value="all">All Categories</option>
-                {categories.slice(1).map(cat => (
-                  <option key={cat} value={cat.toLowerCase()}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div className="md:w-40">
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-              >
-                <option value="all">All Status</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="planned">Planned</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-
-            {/* Filter Button */}
-            <button
-              onClick={filterProjects}
-              className="md:w-auto px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center"
-            >
-              <FiFilter className="mr-2" />
-              Apply Filters
-            </button>
-          </div>
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              {/* Project Image */}
-              <div className="h-48 bg-gray-300 relative">
-                {project.image && (
-                  <img 
-                    src={project.image} 
-                    alt={project.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getProjectStatusClass(project.status)}`}>
-                    {getProjectStatusLabel(project.status)}
-                  </span>
-                </div>
-                {project.category && (
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {project.category}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Project Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">{project.title}</h3>
-                <p className="text-gray-600 mb-4 line-clamp-2">{project.description}</p>
-
-                {/* Progress Bar */}
-                {project.status === 'ongoing' && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Progress</span>
-                      <span className="font-semibold">{project.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-primary-600 rounded-full h-2 transition-all duration-500"
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Funding Info */}
-                {project.goal && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Funding</span>
-                      <span className="font-semibold">
-                        ₹{project.raised?.toLocaleString()} / ₹{project.goal.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-600 rounded-full h-2"
-                        style={{ width: `${(project.raised / project.goal) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Impact Stats */}
-                {project.impact && (
-                  <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                    {Object.entries(project.impact).map(([key, value]) => (
-                      <div key={key} className="bg-gray-50 rounded p-2">
-                        <div className="text-sm font-semibold text-primary-600">{value}</div>
-                        <div className="text-xs text-gray-500 capitalize">{key}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Location and Date */}
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  {project.location && (
-                    <span className="flex items-center">
-                      <FiMapPin className="mr-1" size={14} />
-                      {project.location}
-                    </span>
-                  )}
-                  {project.startDate && (
-                    <span className="flex items-center">
-                      <FiCalendar className="mr-1" size={14} />
-                      {new Date(project.startDate).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewProject(project)}
-                    className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center"
-                  >
-                    <FiEye className="mr-2" />
-                    View Details
-                  </button>
-                  {project.status === 'ongoing' && (
-                    <Link
-                      to="/donate"
-                      state={{ project: project.id }}
-                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                    >
-                      <FiHeart className="mr-2" />
-                      Donate
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* No Results */}
-        {filteredProjects.length === 0 && (
-          <div className="text-center py-12">
-            <FiBarChart2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No projects found</h3>
-            <p className="text-gray-500">Try adjusting your filters or search term</p>
-          </div>
-        )}
-
-        {/* Project Modal */}
-        {showModal && selectedProject && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                {/* Modal Header */}
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedProject.title}</h2>
-                    <div className="flex items-center mt-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold mr-3 ${getProjectStatusClass(selectedProject.status)}`}>
-                        {getProjectStatusLabel(selectedProject.status)}
-                      </span>
-                      {selectedProject.category && (
-                        <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-xs font-semibold">
-                          {selectedProject.category}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeModal}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Project Image */}
-                {selectedProject.image && (
-                  <div className="mb-6">
-                    <img 
-                      src={selectedProject.image} 
-                      alt={selectedProject.title}
-                      className="w-full h-64 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
-
-                {/* Project Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  {/* Description */}
-                  <div className="md:col-span-2">
-                    <h3 className="text-lg font-semibold mb-3">About the Project</h3>
-                    <p className="text-gray-700 mb-4">{selectedProject.longDescription || selectedProject.description}</p>
-                    
-                    {selectedProject.objectives && (
-                      <>
-                        <h4 className="font-semibold mb-2">Objectives</h4>
-                        <ul className="list-disc list-inside text-gray-700 mb-4">
-                          {selectedProject.objectives.map((obj, idx) => (
-                            <li key={idx}>{obj}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-
-                    {selectedProject.achievements && (
-                      <>
-                        <h4 className="font-semibold mb-2">Key Achievements</h4>
-                        <ul className="list-disc list-inside text-gray-700">
-                          {selectedProject.achievements.map((ach, idx) => (
-                            <li key={idx}>{ach}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Sidebar Info */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold mb-3">Project Details</h3>
-                    
-                    <div className="space-y-3">
-                      {selectedProject.location && (
-                        <div className="flex items-start">
-                          <FiMapPin className="text-primary-600 mr-2 mt-1 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium">Location</div>
-                            <div className="text-sm text-gray-600">{selectedProject.location}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedProject.startDate && (
-                        <div className="flex items-start">
-                          <FiCalendar className="text-primary-600 mr-2 mt-1 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium">Duration</div>
-                            <div className="text-sm text-gray-600">
-                              {new Date(selectedProject.startDate).toLocaleDateString()} 
-                              {selectedProject.endDate && ` - ${new Date(selectedProject.endDate).toLocaleDateString()}`}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedProject.partners && (
-                        <div className="flex items-start">
-                          <FiUsers className="text-primary-600 mr-2 mt-1 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium">Partners</div>
-                            <div className="text-sm text-gray-600">{selectedProject.partners.join(', ')}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedProject.funding && (
-                        <div className="flex items-start">
-                          <FiAward className="text-primary-600 mr-2 mt-1 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium">Funding Partners</div>
-                            <div className="text-sm text-gray-600">{selectedProject.funding.join(', ')}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Download Report */}
-                    {(selectedProject.reportUrl || selectedProject.report) && (
-                      <button
-                        onClick={() => downloadReport(selectedProject)}
-                        className="w-full mt-4 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center"
-                      >
-                        <FiDownload className="mr-2" />
-                        Download Report
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Impact Section */}
-                {selectedProject.impact && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Impact Created</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {Object.entries(selectedProject.impact).map(([key, value]) => (
-                        <div key={key} className="bg-primary-50 rounded-lg p-4 text-center">
-                          <div className="text-2xl font-bold text-primary-600">{value}</div>
-                          <div className="text-sm text-gray-700 capitalize">{key}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Gallery */}
-                {selectedProject.gallery && selectedProject.gallery.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Project Gallery</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {selectedProject.gallery.map((img, idx) => (
-                        <img 
-                          key={idx}
-                          src={img} 
-                          alt={`Gallery ${idx + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  {selectedProject.status === 'ongoing' && (
-                    <Link
-                      to="/donate"
-                      state={{ project: selectedProject.id }}
-                      className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                      onClick={closeModal}
-                    >
-                      <FiHeart className="mr-2" />
-                      Support This Project
-                    </Link>
-                  )}
-                  <Link
-                    to="/volunteer"
-                    className="flex-1 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center"
-                    onClick={closeModal}
-                  >
-                    <FiUsers className="mr-2" />
-                    Volunteer for Project
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="flex h-full min-w-0 flex-col gap-3 overflow-hidden bg-gray-50 px-[5px] pt-20">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {metricItems.map(({ icon: Icon, label, value, filter, color }) => <button key={label} type="button" aria-pressed={category === 'all' && status === filter} onClick={() => selectSummary(filter)} className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 ${color} ${category === 'all' && status === filter ? 'font-semibold ring-1 ring-current' : ''}`}><Icon /><span>{label}</span><span className="font-semibold">{numberLabel(value)}</span></button>)}
+        <div className="relative w-full sm:ml-auto sm:w-48"><FiSearch className="absolute left-2.5 top-2.5 text-gray-400" /><input aria-label="Search projects" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search projects…" className="h-[34px] w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs focus:border-primary-500 focus:outline-none" /></div>
+        <button ref={filterButtonRef} type="button" aria-expanded={Boolean(filterPosition)} aria-controls="project-filter-panel" onClick={openFilters} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-primary-700 hover:bg-primary-50"><FiFilter />Filters</button>
       </div>
+      {filterPosition && createPortal(
+        <section ref={filterPanelRef} id="project-filter-panel" role="dialog" aria-label="Project filters" tabIndex={-1} style={filterPosition} className="fixed z-50 w-72 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-auto rounded-lg border border-slate-200 bg-white shadow-xl outline-none">
+          <div className="flex items-center justify-between px-4 pt-3 text-sm font-semibold text-slate-800">Filters<button type="button" aria-label="Close filters" onClick={() => setFilterPosition(null)} className="rounded p-1 text-slate-500 hover:bg-slate-100"><FiX /></button></div>
+          <div className="space-y-4 p-4">
+            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Category</label><CommonSelect label="Category" value={draftFilters.category} onChange={value => setDraftFilters(previous => ({ ...previous, category: value }))} options={[{ value: 'all', label: 'All Categories' }, ...categories.map(value => ({ value: value.toLowerCase(), label: value }))]} /></div>
+            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Status</label><CommonSelect label="Status" value={draftFilters.status} onChange={value => setDraftFilters(previous => ({ ...previous, status: value }))} options={[{ value: 'all', label: 'All Status' }, { value: 'ongoing', label: 'Ongoing' }, { value: 'planned', label: 'Planned' }, { value: 'completed', label: 'Completed' }]} /></div>
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3"><button type="button" onClick={() => setDraftFilters({ category: 'all', status: 'all' })} className="text-xs text-slate-500 hover:text-slate-900">Clear</button><button type="button" onClick={() => { setCategory(draftFilters.category); setStatus(draftFilters.status); setPage(1); setFilterPosition(null); filterButtonRef.current?.focus(); }} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">Apply</button></div>
+        </section>, document.body
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
+        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader size="lg" label="Loading projects…" showLabel /></div>
+          : loadError ? <div className="flex min-h-0 flex-1 items-center justify-center gap-2 text-sm text-gray-600">Could not load projects. <button onClick={loadProjects} className="text-primary-700 underline">Retry</button></div>
+            : filteredProjects.length === 0 ? <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-gray-500">No projects match these filters.</div>
+              : <>
+                <div className="admin-table-scroll hidden min-h-0 flex-1 overflow-auto overscroll-contain lg:block">
+                  <table className="w-full table-fixed text-sm"><colgroup><col className="w-[27%]" /><col className="w-[15%]" /><col className="w-[12%]" /><col className="w-[15%]" /><col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[10%]" /></colgroup>
+                    <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50"><tr>{['Project', 'Category', 'Status', 'Location', 'Progress', 'Start Date', 'Actions'].map(label => <th key={label} className={`px-3 py-3 text-left text-xs font-medium uppercase text-gray-500 ${label === 'Actions' ? 'text-right' : ''}`}>{label}</th>)}</tr></thead>
+                    <tbody className="divide-y divide-gray-100">{visibleProjects.map(project => <tr key={projectId(project)} className="hover:bg-slate-50">
+                      <td className="px-3 py-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{project.image ? <img src={project.image} alt="" className="h-full w-full object-cover" /> : <FiTarget />}</div><div className="min-w-0"><div className="truncate font-medium text-gray-900" title={project.title}>{project.title}</div><div className="truncate text-xs text-gray-500" title={project.description || ''}>{project.description || '—'}</div></div></div></td>
+                      <td className="truncate px-3 py-3 text-gray-600" title={project.category || ''}>{project.category || '—'}</td>
+                      <td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs ${statusClass(project.status)}`}>{statusLabel(project.status)}</span></td>
+                      <td className="truncate px-3 py-3 text-gray-600" title={project.location || ''}>{project.location || '—'}</td>
+                      <td className="px-3 py-3 text-gray-600">{project.progress == null ? '—' : `${project.progress}%`}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-gray-600">{dateLabel(project.startDate)}</td>
+                      <td className="px-3 py-3 text-right"><button type="button" onClick={() => viewProject(project)} aria-label={`View ${project.title}`} className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-primary-700 hover:bg-primary-50"><FiEye size={17} />View</button></td>
+                    </tr>)}</tbody>
+                  </table>
+                </div>
+                <div className="admin-table-scroll min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2 lg:hidden">{visibleProjects.map(project => <article key={projectId(project)} className="rounded-lg border bg-white p-3 text-sm"><div className="flex gap-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{project.image ? <img src={project.image} alt="" className="h-full w-full object-cover" /> : <FiTarget />}</div><div className="min-w-0 flex-1"><h2 className="font-semibold text-gray-900">{project.title}</h2><p className="mt-1 text-xs text-gray-500">{project.category || 'Uncategorized'} · {project.location || 'Location unavailable'}</p></div><span className={`h-fit shrink-0 rounded-full px-2 py-1 text-xs ${statusClass(project.status)}`}>{statusLabel(project.status)}</span></div><p className="mt-2 line-clamp-2 text-gray-600">{project.description}</p><div className="mt-2 flex items-center justify-between border-t pt-2"><span className="text-xs text-gray-500">Started {dateLabel(project.startDate)}</span><button type="button" onClick={() => viewProject(project)} className="inline-flex items-center gap-1 rounded px-2 py-1 text-primary-700 hover:bg-primary-50"><FiEye />View</button></div></article>)}</div>
+              </>}
+        <Pagination page={currentPage} pageSize={pageSize} total={filteredProjects.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} disabled={loading} itemLabel="Projects" />
+      </div>
+
+      <CommonPopup open={Boolean(selectedProject)} title={<div className="flex flex-wrap items-center gap-2"><span>{selectedProject?.title || 'Project details'}</span>{selectedProject && <><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(selectedProject.status)}`}>{statusLabel(selectedProject.status)}</span>{selectedProject.category && <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-800">{selectedProject.category}</span>}</>}</div>} onClose={() => setSelectedProject(null)} size="lg" footer={<div className="flex justify-end"><button type="button" onClick={() => setSelectedProject(null)} className="rounded border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Close</button></div>}>
+        {selectedProject && <div className="space-y-5">
+          <div className={selectedProject.image ? 'grid gap-4 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]' : ''}>
+            {selectedProject.image && <div className="flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-2"><img src={selectedProject.image} alt={selectedProject.title} className="h-full w-full object-contain" /></div>}
+            <div className="min-w-0"><h3 className="mb-1 font-semibold text-gray-900">About the project</h3><p className="whitespace-pre-wrap text-gray-700">{selectedProject.longDescription || selectedProject.description || 'No description available.'}</p></div>
+          </div>
+          <div className="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2"><div><span className="text-gray-500">Location</span><p className="font-medium">{selectedProject.location || '—'}</p></div><div><span className="text-gray-500">Start date</span><p className="font-medium">{dateLabel(selectedProject.startDate)}</p></div><div><span className="text-gray-500">End date</span><p className="font-medium">{dateLabel(selectedProject.endDate)}</p></div><div><span className="text-gray-500">Progress</span><p className="font-medium">{selectedProject.progress == null ? '—' : `${selectedProject.progress}%`}</p></div>{selectedProject.goal != null && <div><span className="text-gray-500">Funding goal</span><p className="font-medium">{moneyLabel(selectedProject.goal)}</p></div>}{selectedProject.raised != null && <div><span className="text-gray-500">Raised</span><p className="font-medium">{moneyLabel(selectedProject.raised)}</p></div>}</div>
+          {Array.isArray(selectedProject.objectives) && selectedProject.objectives.length > 0 && <div><h3 className="mb-1 font-semibold">Objectives</h3><ul className="list-inside list-disc space-y-1 text-gray-700">{selectedProject.objectives.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
+          {Array.isArray(selectedProject.achievements) && selectedProject.achievements.length > 0 && <div><h3 className="mb-1 font-semibold">Achievements</h3><ul className="list-inside list-disc space-y-1 text-gray-700">{selectedProject.achievements.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
+          {selectedProject.impact && Object.keys(selectedProject.impact).length > 0 && <div><h3 className="mb-2 font-semibold">Impact</h3><div className="grid gap-2 sm:grid-cols-3">{Object.entries(selectedProject.impact).map(([key, value]) => <div key={key} className="rounded border border-primary-100 bg-primary-50 p-3"><div className="font-semibold text-primary-700">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</div><div className="text-xs capitalize text-gray-600">{key.replace(/([A-Z])/g, ' $1')}</div></div>)}</div></div>}
+          {Array.isArray(selectedProject.partners) && selectedProject.partners.length > 0 && <p><strong>Partners:</strong> {selectedProject.partners.join(', ')}</p>}
+          {Array.isArray(selectedProject.funding) && selectedProject.funding.length > 0 && <p><strong>Funding partners:</strong> {selectedProject.funding.join(', ')}</p>}
+          {Array.isArray(selectedProject.gallery) && selectedProject.gallery.length > 0 && <div><h3 className="mb-2 font-semibold">Gallery</h3><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{selectedProject.gallery.map((image, index) => <img key={index} src={image} alt={`${selectedProject.title} gallery ${index + 1}`} className="h-24 w-full rounded object-cover" />)}</div></div>}
+        </div>}
+      </CommonPopup>
     </div>
   );
 };

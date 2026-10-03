@@ -47,15 +47,15 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isAdminDashboard = ['/admin', '/my-groups', '/roles'].includes(location.pathname);
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles'].includes(location.pathname);
+  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects'].includes(location.pathname);
 
   return (
-    <div className={isAdminDashboard ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
+    <div className={isFullHeightPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
-      <div className={isAdminDashboard ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main className={isAdminDashboard ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+      <div className={isFullHeightPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
+        <main className={isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}

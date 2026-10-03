@@ -12,6 +12,9 @@ const CommonPopup = ({ open = true, title, description, onClose, children, foote
   const closeRef = useRef(onClose);
   const busyRef = useRef(busy);
   const closeWhileBusyRef = useRef(closeWhileBusy);
+  const requestClose = () => {
+    if (!busyRef.current || closeWhileBusyRef.current) closeRef.current?.();
+  };
   useEffect(() => {
     closeRef.current = onClose;
     busyRef.current = busy;
@@ -57,7 +60,7 @@ const CommonPopup = ({ open = true, title, description, onClose, children, foote
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 sm:p-5" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && (!busy || closeWhileBusy)) onClose?.();
+      if (event.target === event.currentTarget) requestClose();
     }}>
       <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined} aria-busy={busy} tabIndex={-1}
@@ -67,8 +70,8 @@ const CommonPopup = ({ open = true, title, description, onClose, children, foote
             <h2 id={titleId} className="font-sans text-sm font-semibold text-gray-900">{title}</h2>
             {description && <p id={descriptionId} className="mt-0.5 text-xs text-gray-500">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} disabled={busy && !closeWhileBusy} aria-label="Close popup" data-tooltip="Close"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-500 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 disabled:opacity-40">
+          <button type="button" onClick={(event) => { event.stopPropagation(); requestClose(); }} disabled={busy && !closeWhileBusy} aria-label="Close popup"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded text-gray-500 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 disabled:opacity-40">
             <FiX size={16} aria-hidden="true" />
           </button>
         </header>

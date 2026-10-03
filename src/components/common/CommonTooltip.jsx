@@ -108,7 +108,7 @@ const CommonTooltip = () => {
     <div
       ref={tooltipRef}
       role="tooltip"
-      className="fixed z-[100] w-max max-w-[min(25rem,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-900 px-2.5 py-1.5 text-left text-xs leading-5 text-white shadow-lg [overflow-wrap:anywhere]"
+      className="pointer-events-none fixed z-[100] w-max max-w-[min(25rem,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-900 px-2.5 py-1.5 text-left text-xs leading-5 text-white shadow-lg [overflow-wrap:anywhere]"
       style={{ left: 0, top: 0, visibility: 'hidden' }}
     >
       {tooltip.text}
