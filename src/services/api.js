@@ -571,13 +571,8 @@ const apiService = {
   },
 
   submitContactForm: async (formData) => {
-    try {
-      const response = await api.post('/contact', formData);
-      return response.data;
-    } catch (error) {
-      console.log('Mock contact form submitted');
-      return { success: true, message: 'Message sent successfully' };
-    }
+    const response = await api.post('/contact', formData);
+    return response.data;
   },
 
   submitFeedback: async (feedbackData) => {
@@ -602,7 +597,9 @@ const apiService = {
 
   login: async (credentials) => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      // Render can take about a minute to resume an idle service.
+      // Submit credentials once; do not retry authentication automatically.
+      const response = await api.post('/auth/login', credentials, { timeout: 90000 });
       return persistAuth(response.data, credentials.userType || 'user');
     } catch (error) {
       throwApiError(error);

@@ -12,6 +12,7 @@ import {
 import { FaWhatsapp } from 'react-icons/fa';
 import ravanaLogo from '../../asset/image/ravanan.png';
 import config from '../../config';
+import office from '../../config/office';
 
 const FoundationFooter = () => {
   const currentYear = new Date().getFullYear();
@@ -91,7 +92,7 @@ const FoundationFooter = () => {
               <div className="mt-5 space-y-4 text-white/70">
                 <div className="flex min-w-0 items-start gap-3">
                   <FiMapPin className="mt-1 h-5 w-5 flex-shrink-0 text-accent-300" />
-                  <span>212, 1st Floor, Ramalingam Road East, R.S. Puram, Coimbatore – 641002, Tamil Nadu, India.</span>
+                  <a href={office.mapsUrl} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{office.address}</a>
                 </div>
                 <div className="flex min-w-0 items-start gap-3">
                   <FiPhone className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-300" />

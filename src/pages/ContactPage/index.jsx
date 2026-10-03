@@ -1,12 +1,13 @@
 import CommonLoader from '../../components/common/CommonLoader';
 import React, { useState } from 'react';
 import { 
-  FiMapPin, FiPhone, FiMail, FiClock, FiSend, FiUser,
+  FiMapPin, FiPhone, FiMail, FiSend, FiUser,
   FiMessageSquare, FiFacebook,
-  FiInstagram, FiLinkedin, FiYoutube, FiHeart, FiMessageCircle,
+  FiInstagram, FiLinkedin, FiYoutube, FiMessageCircle,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
+import office from '../../config/office';
 
 const ContactPage = () => {
   const [loading, setLoading] = useState(false);
@@ -20,16 +21,6 @@ const ContactPage = () => {
     preferredContact: 'email',
     consent: false
   });
-
-  const [faqOpen, setFaqOpen] = useState({});
-
-  const contactDetails = {
-    addressLine1: '212, 1st Floor, Ramalingam Road East',
-    addressLine2: 'R.S. Puram, Coimbatore - 641002',
-    addressLine3: 'Tamil Nadu, India',
-    phone: '+91 94878 14418',
-    email: 'enquiry.raavanathalaigal@gmail.com'
-  };
 
   const socialLinks = [
     {
@@ -64,42 +55,6 @@ const ContactPage = () => {
     }
   ];
 
-  // FAQs
-  const faqs = [
-    {
-      question: 'How can I donate to Raavana Thalaigal Trust?',
-      answer: 'You can donate online through our website via credit card, debit card, UPI, or net banking. You can also send a cheque or demand draft to our Chennai headquarters. All donations are eligible for tax exemption under Section 80G of the Income Tax Act.'
-    },
-    {
-      question: 'How do I volunteer with your organization?',
-      answer: 'Visit our Volunteer page and fill out the application form. Our volunteer coordinator will contact you within 3-5 business days to discuss opportunities that match your skills and interests. We also conduct regular orientation sessions for new volunteers.'
-    },
-    {
-      question: 'Can I donate to a specific project?',
-      answer: 'Yes, you can choose to donate to specific projects like Education, Healthcare, Women Empowerment, or Environment. Our donation form allows you to allocate your contribution to the project of your choice.'
-    },
-    {
-      question: 'How is my donation used?',
-      answer: 'We maintain complete transparency in fund utilization. 85% of donations go directly to program activities, 10% to administrative costs, and 5% to fundraising. You can view our detailed financial reports in the Reports section.'
-    },
-    {
-      question: 'Do you provide certificates for donations?',
-      answer: 'Yes, we provide 80G certificates for all donations above ₹500. The certificate will be sent to your email within 7 working days of the donation.'
-    },
-    {
-      question: 'How can I partner with your organization?',
-      answer: 'We welcome corporate partnerships, CSR collaborations, and institutional funding. Please contact our partnerships team at partnerships@raavanathalaigal.org with your proposal.'
-    },
-    {
-      question: 'Can I visit your project sites?',
-      answer: 'Yes, we organize site visits for donors and partners. Please contact us to schedule a visit. We recommend giving at least two weeks notice for arrangements.'
-    },
-    {
-      question: 'How do I update my donor information?',
-      answer: 'You can update your information by logging into your account on our website or by contacting our donor support team at donate@raavanathalaigal.org.'
-    }
-  ];
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -111,8 +66,9 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (loading) return;
     // Validation
-    if (!formData.name || !formData.email || !formData.message) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -127,6 +83,7 @@ const ContactPage = () => {
     try {
       const response = await apiService.submitContactForm(formData);
       
+      if (!response?.success) throw new Error('Message not accepted');
       if (response.success) {
         toast.success('Message sent successfully! We\'ll get back to you soon.');
         // Reset form
@@ -141,101 +98,60 @@ const ContactPage = () => {
           consent: false
         });
       }
-    } catch (error) {
-      toast.error('Failed to send message. Please try again.');
+    } catch {
+      toast.error('Message could not be sent. Please try again, or contact us by phone or email.');
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleFaq = (index) => {
-    setFaqOpen(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
-
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
+    <div className="pt-24 pb-10 min-h-screen bg-gray-50">
       <div className="container-custom">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Contact Us</h1>
+          <p className="text-sm text-gray-600">
+            Get in touch about volunteering, donations, partnerships, or our work.
           </p>
         </div>
 
-        {/* Contact Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiMapPin className="w-8 h-8 text-primary-600" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Visit Us</h3>
-            <p className="text-gray-600 text-sm">
-              {contactDetails.addressLine1}<br />
-              {contactDetails.addressLine2}<br />
-              {contactDetails.addressLine3}
-            </p>
+        <section aria-label="Office contact details" className="grid gap-4 md:grid-cols-3 mb-6">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <h2 className="flex items-center gap-2 text-base font-semibold"><FiMapPin className="text-primary-600" />NGO Office</h2>
+            <address className="mt-3 text-sm leading-6 not-italic text-gray-600">{office.address}</address>
+            <a href={office.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-semibold text-primary-700 hover:underline">Get directions</a>
           </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiPhone className="w-8 h-8 text-primary-600" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Call Us</h3>
-            <p className="text-gray-600 text-sm">
-              {contactDetails.phone}<br />
-              Secretariat Office<br />
-              Mon-Fri, 9am-6pm
-            </p>
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <h2 className="flex items-center gap-2 text-base font-semibold"><FiPhone className="text-primary-600" />Call Us</h2>
+            <a href={office.phoneUrl} className="mt-3 block text-sm text-primary-700 hover:underline">{office.phone}</a>
+            <p className="mt-2 text-sm text-gray-500">Please call ahead to confirm availability before visiting.</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiMail className="w-8 h-8 text-primary-600" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Email Us</h3>
-            <p className="text-gray-600 text-sm">
-              {contactDetails.email}<br />
-              Official Enquiries<br />
-              Reply during office hours
-            </p>
+          <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-5">
+            <h2 className="flex items-center gap-2 text-base font-semibold"><FiMail className="text-primary-600" />Email Us</h2>
+            <a href={'mailto:' + office.email} className="mt-3 block break-all text-sm text-primary-700 hover:underline">{office.email}</a>
+            <p className="mt-2 text-sm text-gray-500">For inquiries, volunteering, and partnerships.</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiClock className="w-8 h-8 text-primary-600" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Office Hours</h3>
-            <p className="text-gray-600 text-sm">
-              Monday - Friday<br />
-              9:00 AM - 6:00 PM<br />
-              Saturday: 10am-2pm
-            </p>
-          </div>
-        </div>
-
+        </section>
         {/* Main Contact Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
+            <div className="bg-white rounded-xl border border-gray-200 p-5 sm:p-6">
+              <h2 className="text-xl font-semibold mb-5">Send us a Message</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Name and Email Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-2">
                       Your Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
-                        name="name"
+                        id="contact-name" name="name"
                         value={formData.name}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
@@ -246,14 +162,14 @@ const ContactPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
                         type="email"
-                        name="email"
+                        id="contact-email" name="email"
                         value={formData.email}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
@@ -267,14 +183,14 @@ const ContactPage = () => {
                 {/* Phone and Subject Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <div className="relative">
                       <FiPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
-                        type="tel"
-                        name="phone"
+                        type="tel" required={formData.preferredContact === "phone"}
+                        id="contact-phone" name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
@@ -284,12 +200,12 @@ const ContactPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contact-subject" className="block text-sm font-medium text-gray-700 mb-2">
                       Subject
                     </label>
                     <input
                         type="text"
-                        name="subject"
+                        id="contact-subject" name="subject"
                         value={formData.subject}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
@@ -300,11 +216,11 @@ const ContactPage = () => {
 
                 {/* Inquiry Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="contact-inquiryType" className="block text-sm font-medium text-gray-700 mb-2">
                     Inquiry Type
                   </label>
                   <select
-                    name="inquiryType"
+                    id="contact-inquiryType" name="inquiryType"
                     value={formData.inquiryType}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
@@ -352,13 +268,13 @@ const ContactPage = () => {
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">
                     Your Message <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <FiMessageSquare className="absolute left-3 top-3 text-gray-400" />
                     <textarea
-                      name="message"
+                      id="contact-message" name="message"
                       value={formData.message}
                       onChange={handleInputChange}
                       rows="6"
@@ -411,33 +327,13 @@ const ContactPage = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Emergency Contact */}
-            <div className="bg-primary-600 rounded-lg shadow-lg p-6 text-white">
-              <h3 className="text-xl font-bold mb-4 flex items-center">
-                <FiHeart className="mr-2" />
-                Emergency Contact
-              </h3>
-              <p className="mb-4">
-                For urgent matters requiring immediate attention:
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <FiPhone className="mr-3" />
-                  <a href={`tel:${contactDetails.phone.replace(/\s+/g, '')}`} className="hover:underline">
-                    Mobile: {contactDetails.phone}
-                  </a>
-                </div>
-                <div className="flex items-center">
-                  <FiMail className="mr-3" />
-                  <a href={`mailto:${contactDetails.email}`} className="break-all hover:underline">
-                    {contactDetails.email}
-                  </a>
-                </div>
-              </div>
-            </div>
-
+            <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+              <div className="p-5"><h2 className="text-lg font-semibold">Find Our Office</h2><p className="mt-2 text-sm text-gray-500">Raavana Thalaigal Trust · Ganapathy, Coimbatore</p></div>
+              <iframe title="Raavana Thalaigal Trust office location" src={office.embedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen className="h-80 w-full border-0" />
+              <a href={office.mapsUrl} target="_blank" rel="noopener noreferrer" className="block border-t border-gray-200 p-4 text-center text-sm font-semibold text-primary-700 hover:bg-primary-50">Open in Google Maps</a>
+            </section>
             {/* Social Media */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
               <div className="grid grid-cols-3 gap-3">
                 {socialLinks.map(({ name, href, className, icon: Icon }) => (
@@ -458,80 +354,8 @@ const ContactPage = () => {
           </div>
         </div>
 
-        {/* Map Placeholder */}
-        <div className="mb-12">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold mb-4">Find Us</h2>
-            <div className="bg-gray-200 h-96 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <FiMapPin className="w-16 h-16 text-primary-600 mx-auto mb-4" />
-                <p className="text-gray-600">Interactive Map Integration</p>
-                <p className="text-sm text-gray-500">Google Maps will be integrated here</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* FAQs */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-center">Frequently Asked Questions</h2>
-          <div className="max-w-3xl mx-auto">
-            {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow mb-4 overflow-hidden">
-                <button
-                  onClick={() => toggleFaq(index)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-medium text-gray-800">{faq.question}</span>
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                      faqOpen[index] ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {faqOpen[index] && (
-                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                    <p className="text-gray-600">{faq.answer}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Newsletter Signup */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-lg p-8 text-white">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
-            <p className="mb-6">
-              Subscribe to our newsletter to receive updates about our projects, events, and impact stories.
-            </p>
-            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 bg-white text-primary-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
-            <p className="text-sm text-primary-100 mt-4">
-              We respect your privacy. Unsubscribe at any time.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
 };
-
 export default ContactPage;

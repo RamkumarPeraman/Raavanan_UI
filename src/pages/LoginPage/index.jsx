@@ -13,6 +13,15 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [slowLogin, setSlowLogin] = useState(false);
+
+  useEffect(() => {
+    if (!loading || !isLogin) {
+      return;
+    }
+    const timer = setTimeout(() => setSlowLogin(true), 10000);
+    return () => clearTimeout(timer);
+  }, [loading, isLogin]);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -68,6 +77,8 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    setSlowLogin(false);
 
     if (!loginData.email || !loginData.password) {
       toast.error('Please fill in all fields');
@@ -195,6 +206,11 @@ const LoginPage = () => {
               <Link to="/forgot-password" className="text-xs text-primary-600 transition-colors hover:text-primary-500">Forgot password?</Link>
             </div>
 
+            {loading && slowLogin && (
+              <p role="status" className="mb-3 rounded-lg bg-primary-50 p-3 text-sm text-primary-800">
+                Connecting is taking longer than usual. The server may be starting up. Please wait; your login is still in progress.
+              </p>
+            )}
             <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Logging in...' : 'Login'}</button>
           </form>
         ) : (
