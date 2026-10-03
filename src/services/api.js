@@ -815,12 +815,35 @@ const apiService = {
     }
   },
 
+  getRolePermissions: async () => {
+    try {
+      const response = await api.get('/roles/permissions');
+      return response.data;
+    } catch (error) {
+      throwApiError(error);
+    }
+  },
+
+  getMyRoleAccess: async () => {
+    const response = await api.get('/roles/access');
+    return response.data?.data || { permissions: [] };
+  },
+
   createRole: async (roleData) => {
     try {
         const response = await api.post('/roles', roleData);
         return response.data;
     } catch (error) {
         throwApiError(error);
+    }
+  },
+
+  updateRole: async (id, roleData) => {
+    try {
+      const response = await api.put(`/roles/${id}`, roleData);
+      return response.data;
+    } catch (error) {
+      throwApiError(error);
     }
   },
 

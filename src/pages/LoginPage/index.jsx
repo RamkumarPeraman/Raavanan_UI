@@ -85,12 +85,7 @@ const LoginPage = () => {
 
       toast.success(`Welcome back, ${user.name}!`);
 
-      const normalizedRole = typeof user.role === 'string' ? user.role.trim().toLowerCase() : user.role;
-      if (normalizedRole === 'super_admin' || normalizedRole === 'admin') {
-        navigate('/my-groups');
-      } else {
-        navigate('/profile');
-      }
+      navigate('/', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Invalid email or password');
     } finally {

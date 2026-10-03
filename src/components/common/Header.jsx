@@ -15,6 +15,7 @@ import {
 import { toast } from 'react-toastify';
 import ravanaLogo from '../../asset/image/ravanan.png';
 import apiService from '../../services/api';
+import { pagePermissionByPath } from '../../constants/pageAccess';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') return role;
@@ -42,6 +43,7 @@ const Header = () => {
   const mobileMenuButtonRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [permissions, setPermissions] = useState([]);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -136,6 +138,15 @@ const Header = () => {
     syncAuthState();
   }, [location]);
 
+  useEffect(() => {
+    if (!isLoggedIn) { setPermissions([]); return undefined; }
+    let active = true;
+    apiService.getMyRoleAccess().then(access => {
+      if (active) setPermissions(access.permissions || []);
+    }).catch(() => { if (active) setPermissions([]); });
+    return () => { active = false; };
+  }, [isLoggedIn, user?.id, user?.role, location.pathname]);
+
   const handleLogout = () => {
     apiService.logout();
     setIsLoggedIn(false);
@@ -145,6 +156,9 @@ const Header = () => {
   };
 
   const isAdmin = ['admin', 'super_admin'].includes(normalizeRole(user?.role));
+  const canViewUsers = isAdmin || permissions.includes('users:read');
+  const canViewRoles = isAdmin || permissions.includes('roles:read');
+  const canOpenPage = path => !isLoggedIn || permissions.includes(pagePermissionByPath[path]);
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -180,7 +194,7 @@ const Header = () => {
           </Link>
 
           <nav className="ml-auto hidden items-center md:flex lg:gap-1" aria-label="Main navigation">
-            {navigationItems.map((item) => (
+            {navigationItems.filter(item => canOpenPage(item.path)).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -196,14 +210,14 @@ const Header = () => {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-2 lg:ml-3">
-            <Link
+            {canOpenPage('/donate') && <Link
               to="/donate"
               className="flex h-10 items-center justify-center rounded-full bg-primary-700 px-3 font-semibold text-white transition-colors hover:bg-primary-800 md:px-5"
               aria-label="Donate now"
             >
               <FiHeart className="lg:hidden" size={19} />
               <span className="hidden lg:inline">Donate Now</span>
-            </Link>
+            </Link>}
 
             {isLoggedIn ? (
               <div ref={userMenuRef} className="relative">
@@ -231,13 +245,13 @@ const Header = () => {
 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white py-2 shadow-2xl">
-                    <Link to="/profile" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>
+                    {canOpenPage('/profile') && <Link to="/profile" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>}
 
-                    {isAdmin && (
+                    {(isAdmin || canViewUsers || canViewRoles) && (
                       <div className="mt-1 border-t border-gray-100 pt-1">
-                        <Link to="/admin" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />Admin Dashboard</Link>
-                        <Link to="/my-groups" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />User Management</Link>
-                        <Link to="/roles" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />Roles Management</Link>
+                        {isAdmin && canOpenPage('/admin') && <Link to="/admin" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />Admin Dashboard</Link>}
+                        {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />User Management</Link>}
+                        {canViewRoles && canOpenPage('/roles') && <Link to="/roles" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />Roles Management</Link>}
                       </div>
                     )}
 
@@ -267,7 +281,7 @@ const Header = () => {
         />
       <aside id="mobile-navigation" className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain border-r border-ink-100 bg-white p-4 shadow-2xl">
         <nav className="space-y-2" aria-label="Mobile navigation">
-          {navigationItems.map((item) => (
+          {navigationItems.filter(item => canOpenPage(item.path)).map((item) => (
             <Link
               key={item.path}
               to={item.path}

@@ -73,6 +73,15 @@ const CommonTooltip = () => {
         setTooltip(null);
       }
     };
+    const removedTargetObserver = new MutationObserver(() => {
+      const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (activeElement && (!activeElement.isConnected || (dialog && !dialog.contains(activeElement)))) {
+        activeElement = null;
+        clearTimeout(hideTimer);
+        setTooltip(null);
+      }
+    });
+    removedTargetObserver.observe(document.body, { childList: true, subtree: true });
 
     document.addEventListener('pointerover', show);
     document.addEventListener('pointerout', hide);
@@ -83,6 +92,7 @@ const CommonTooltip = () => {
     window.addEventListener('resize', updateTooltip);
     return () => {
       clearTimeout(hideTimer);
+      removedTargetObserver.disconnect();
       document.removeEventListener('pointerover', show);
       document.removeEventListener('pointerout', hide);
       document.removeEventListener('focusin', show);

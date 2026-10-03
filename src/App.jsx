@@ -8,6 +8,7 @@ import Header from './components/common/Header';
 import Footer from './components/common/FoundationFooter';
 import CommonTooltip from './components/common/CommonTooltip';
 import ProtectedRoute from './components/ProtectedRoute';
+import PageAccessGate from './components/PageAccessGate';
 
 // Pages for raavanan
 
@@ -46,7 +47,7 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isAdminDashboard = ['/admin', '/my-groups'].includes(location.pathname);
+  const isAdminDashboard = ['/admin', '/my-groups', '/roles'].includes(location.pathname);
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles'].includes(location.pathname);
 
   return (
@@ -55,6 +56,7 @@ function AppLayout() {
       <Header />
       <div className={isAdminDashboard ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
         <main className={isAdminDashboard ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+          <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
@@ -101,7 +103,7 @@ function AppLayout() {
 
           {/* Admin Routes */}
           <Route path="/my-groups" element={
-            <ProtectedRoute requiredRole={['ADMIN', 'SUPER_ADMIN']}>
+            <ProtectedRoute requiredPermission="users:read">
               <UserGroupPage />
             </ProtectedRoute>
           } />
@@ -111,11 +113,12 @@ function AppLayout() {
             </ProtectedRoute>
           } />
           <Route path="/roles" element={
-            <ProtectedRoute requiredRole={['ADMIN', 'SUPER_ADMIN']}>
+            <ProtectedRoute requiredPermission="roles:read">
               <RolesManagementPage />
             </ProtectedRoute>
           } />
           </Routes>
+          </PageAccessGate>
         </main>
         {!hideFooter && <Footer />}
       </div>

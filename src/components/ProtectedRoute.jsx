@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import apiService from '../services/api';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') {
@@ -20,9 +21,20 @@ const normalizeRole = (role) => {
   return aliases[role.trim().toUpperCase()] || role.trim().toLowerCase();
 };
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, requiredPermission }) => {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const userId = user?.id;
   const token = localStorage.getItem('authToken');
+  const [allowed, setAllowed] = useState(null);
+
+  useEffect(() => {
+    if (!requiredPermission || !token || !userId) return undefined;
+    let active = true;
+    apiService.getMyRoleAccess()
+      .then(access => { if (active) setAllowed(access.permissions?.includes(requiredPermission) || false); })
+      .catch(() => { if (active) setAllowed(false); });
+    return () => { active = false; };
+  }, [requiredPermission, token, userId, user?.role]);
 
   if (!token || !user) {
     toast.error('Please login to access this page');
@@ -33,6 +45,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const userRole = normalizeRole(user.role);
 
   if (normalizedRequiredRoles.length > 0 && !normalizedRequiredRoles.includes(userRole)) {
+    toast.error('You do not have permission to access this page');
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredPermission && allowed === null) return <div className="p-8 text-center text-gray-500">Checking access...</div>;
+  if (requiredPermission && !allowed) {
     toast.error('You do not have permission to access this page');
     return <Navigate to="/" replace />;
   }

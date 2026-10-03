@@ -10,7 +10,7 @@ import { FaUserShield, FaUserCog, FaUserTie, FaUserGraduate } from 'react-icons/
 import { processImageFile } from '../../utils/imageUpload';
 import apiService from '../../services/api';
 
-const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
+const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles = true }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -409,8 +409,10 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false }) => {
                           </>
                         )}
                       </div>
-                    ) : (
+                    ) : canAssignRoles ? (
                       <CommonSelect name="role" label="role" value={formData.role || ''} onChange={value => handleInputChange({ target: { name: 'role', value } })} options={availableRoles.map(r => ({ value: r.name.toLowerCase(), label: r.name.replace(/_/g, ' ') }))} />
+                    ) : (
+                      <div className="rounded border bg-gray-50 px-3 py-2 text-gray-700">{availableRoles.find(r => r.name === formData.role)?.displayName || formData.role}</div>
                     )}
                   </div>
 

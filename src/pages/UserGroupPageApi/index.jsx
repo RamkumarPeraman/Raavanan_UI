@@ -54,9 +54,11 @@ const UserAvatar = ({ user, size = 'large' }) => {
 
 const UserGroupPageApi = () => {
   const [currentUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
+  const [rolePermissions, setRolePermissions] = useState([]);
   const [availableRoles, setAvailableRoles] = useState(roles); // default to hardcoded
 
   useEffect(() => {
+    apiService.getMyRoleAccess().then(access => setRolePermissions(access.permissions || [])).catch(() => setRolePermissions([]));
     const fetchRoles = async () => {
       try {
         const response = await apiService.getRoles();
@@ -64,7 +66,7 @@ const UserGroupPageApi = () => {
         if (Array.isArray(rolesData) && rolesData.length > 0) {
           const rolesMap = {};
           rolesData.forEach(r => {
-            rolesMap[r.name.toLowerCase()] = { name: r.name.replace(/_/g, ' ') };
+            rolesMap[r.name.toLowerCase()] = { name: r.displayName || r.name.replace(/_/g, ' ') };
           });
           setAvailableRoles(rolesMap);
         }
@@ -114,8 +116,8 @@ const UserGroupPageApi = () => {
   const [popupMode, setPopupMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const canEdit = useMemo(() => ['admin', 'super_admin'].includes(normalizeRole(currentUser?.role)), [currentUser]);
-  const canDelete = useMemo(() => normalizeRole(currentUser?.role) === 'super_admin', [currentUser]);
+  const canEdit = useMemo(() => ['admin', 'super_admin'].includes(normalizeRole(currentUser?.role)) || rolePermissions.includes('users:write'), [currentUser, rolePermissions]);
+  const canDelete = useMemo(() => normalizeRole(currentUser?.role) === 'super_admin' || rolePermissions.includes('users:delete'), [currentUser, rolePermissions]);
 
   const loadUsers = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -149,11 +151,13 @@ const UserGroupPageApi = () => {
   const handleSaveUser = async (userData) => {
     setSaving(true);
     try {
+      const data = ['admin', 'super_admin'].includes(normalizeRole(currentUser?.role)) ? userData : { ...userData };
+      if (!['admin', 'super_admin'].includes(normalizeRole(currentUser?.role)) && popupMode === 'edit') delete data.role;
       if (popupMode === 'add') {
-        await apiService.createUser(userData);
+        await apiService.createUser(data);
         toast.success('User created successfully');
       } else if (popupMode === 'edit') {
-        await apiService.updateUser(selectedUser.id || selectedUser._id, userData);
+        await apiService.updateUser(selectedUser.id || selectedUser._id, data);
         toast.success('User updated successfully');
       }
       setShowPopup(false);
@@ -263,7 +267,7 @@ const UserGroupPageApi = () => {
         </>}
         <Pagination page={currentPage} pageSize={pageSize} total={users.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} disabled={loading} itemLabel="Users" />
       </div>
-      {showPopup && <UserPopup mode={popupMode} user={selectedUser} busy={saving} onClose={() => { if (!saving) { setShowPopup(false); setSelectedUser(null); } }} onSave={handleSaveUser} currentUser={currentUser} />}
+      {showPopup && <UserPopup mode={popupMode} user={selectedUser} busy={saving} onClose={() => { if (!saving) { setShowPopup(false); setSelectedUser(null); } }} onSave={handleSaveUser} currentUser={currentUser} canAssignRoles={['admin', 'super_admin'].includes(normalizeRole(currentUser?.role))} />}
       {deleteTarget && <CommonPopup title="Delete user" size="sm" busy={deleting} onClose={() => setDeleteTarget(null)} footer={<div className="flex justify-end gap-2"><button disabled={deleting} onClick={() => setDeleteTarget(null)} className="border border-gray-300">Cancel</button><button disabled={deleting} onClick={() => handleDeleteUser(deleteTarget)} className="bg-red-600 text-white">{deleting ? 'Deleting…' : 'Delete'}</button></div>}><p>Delete {deleteTarget.name}? This cannot be undone.</p></CommonPopup>}
     </div>
   );
