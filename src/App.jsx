@@ -49,8 +49,8 @@ function ScrollToTop() {
 function AppLayout() {
   const location = useLocation();
   const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
-  const isContactPage = location.pathname === '/contact';
-  const isViewportPage = isFullHeightPage || isContactPage;
+  const isScrollablePage = ['/contact', '/volunteer'].includes(location.pathname);
+  const isViewportPage = isFullHeightPage || isScrollablePage;
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
 
   return (
@@ -58,7 +58,7 @@ function AppLayout() {
       <ScrollToTop />
       <Header />
       <div className={isViewportPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main key={location.pathname} className={isContactPage ? 'mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]' : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+        <main key={location.pathname} className={location.pathname === '/volunteer' ? 'mt-16 min-h-0 flex-1 overflow-hidden md:mt-[4.5rem]' : isScrollablePage ? 'mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]' : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}
@@ -122,9 +122,9 @@ function AppLayout() {
           } />
           </Routes>
           </PageAccessGate>
-          {isContactPage && <Footer />}
+          {location.pathname === '/contact' && <Footer />}
         </main>
-        {!hideFooter && !isContactPage && <Footer />}
+        {!hideFooter && !isScrollablePage && <Footer />}
       </div>
       <ToastContainer position="top-right" autoClose={5000} />
       <CommonTooltip />

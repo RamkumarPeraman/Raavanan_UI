@@ -43,6 +43,8 @@ const ProfilePageApi = () => {
   const [user, setUser] = useState(createEmptyUser());
   const [formData, setFormData] = useState(createEmptyUser());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -52,19 +54,23 @@ const ProfilePageApi = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        setLoadError(false);
         const response = await apiService.getCurrentUser();
         setUser(response.user);
         setFormData(response.user);
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Please login to view your profile');
-        navigate('/login');
+        if (error.response?.status === 401) {
+          navigate('/login', { replace: true });
+        } else {
+          setLoadError(true);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadProfile();
-  }, [navigate]);
+  }, [navigate, loadAttempt]);
 
   const stats = useMemo(() => user.stats || createEmptyUser().stats, [user]);
 
@@ -181,6 +187,16 @@ const ProfilePageApi = () => {
     return (
       <div className="pt-24 min-h-screen bg-gray-50 flex items-center justify-center">
         <CommonLoader />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 pt-16 text-center">
+        <h1 className="text-xl font-semibold text-gray-900">Could not load your profile</h1>
+        <p className="mt-2 text-sm text-gray-600">The server did not respond. Please try again.</p>
+        <button type="button" onClick={() => { setLoading(true); setLoadAttempt(attempt => attempt + 1); }} className="mt-5 rounded-lg bg-primary-700 px-5 py-2.5 font-semibold text-white hover:bg-primary-800">Retry</button>
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import apiService from '../services/api';
+import paymentSettingsReducer from './paymentSettingsStore';
 
 const accessSlice = createSlice({
   name: 'access',
@@ -91,6 +92,6 @@ export const selectAccess = state => state.access;
 export const selectPermissions = state => state.access.permissions;
 
 export const store = configureStore({
-  reducer: { access: accessSlice.reducer },
+  reducer: { access: accessSlice.reducer, paymentSettings: paymentSettingsReducer },
   devTools: false,
 });

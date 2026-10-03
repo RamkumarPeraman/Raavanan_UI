@@ -155,13 +155,14 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
+    <header className={`fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#092b2d] text-white transition-shadow duration-300 ${
       scrolled
-        ? 'bg-[#fffaf1]/95 shadow-lg shadow-ink-950/5 backdrop-blur-xl'
-        : 'bg-[#fffaf1]/90 backdrop-blur-xl'
+        ? 'shadow-[0_12px_28px_rgba(3,25,26,0.18)]'
+        : ''
     }`}>
+      <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-[#14565a]/55 to-transparent" />
       <div className="container-custom">
-        <div className="flex h-16 items-center gap-3 md:h-18">
+        <div className="relative flex h-16 items-center gap-3 md:h-18">
           <button
             ref={mobileMenuButtonRef}
             type="button"
@@ -169,7 +170,7 @@ const Header = () => {
               setIsUserMenuOpen(false);
               setIsMobileMenuOpen((open) => !open);
             }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-800 transition-colors hover:bg-white/80 md:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white transition-colors hover:bg-white/10 md:hidden"
             aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-navigation"
@@ -177,24 +178,25 @@ const Header = () => {
             {isMobileMenuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
 
-          <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2" aria-label="Raavana Thalaigal Trust home">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-1 ring-[#b36a12]/20 md:h-11 md:w-11">
+          <Link to="/" className="group flex min-w-0 shrink-0 items-center gap-2.5" aria-label="Raavana Thalaigal Trust home">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-2 ring-[#eebd62]/70 shadow-[0_0_0_5px_rgba(238,189,98,0.1)] transition-transform duration-300 group-hover:rotate-[-7deg] md:h-11 md:w-11">
               <img src={ravanaLogo} alt="Raavana Thalaigal Trust logo" className="block h-full w-full object-cover" />
             </div>
-            <span className="max-w-[9rem] truncate text-sm font-bold text-ink-950 sm:max-w-[12rem] sm:text-base lg:max-w-none lg:text-xl">
-              Raavana Thalaigal Trust
+            <span className="min-w-0 leading-tight">
+              <span className="block max-w-[8rem] truncate text-sm font-bold tracking-tight text-white sm:max-w-[11rem] sm:text-base lg:max-w-none lg:text-lg">Raavana Thalaigal</span>
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.34em] text-[#efc16f]">Trust</span>
             </span>
           </Link>
 
-          <nav className="ml-auto hidden items-center md:flex lg:gap-1" aria-label="Main navigation">
+          <nav className="ml-auto hidden h-full items-center md:flex lg:gap-1" aria-label="Main navigation">
             {navigationItems.filter(item => canOpenPage(item.path)).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`rounded-full px-2 py-2 text-sm font-semibold transition-colors lg:px-3 ${
+                className={`relative flex h-full items-center px-2 text-sm font-semibold transition-colors after:absolute after:bottom-3 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:transition-opacity lg:px-3 lg:after:left-3 lg:after:right-3 ${
                   isActive(item.path)
-                    ? 'bg-primary-100 text-primary-800'
-                    : 'text-ink-700 hover:bg-white/80 hover:text-primary-700'
+                    ? 'text-[#f4cb87] after:bg-[#f4a94f] after:opacity-100'
+                    : 'text-white/75 after:bg-[#f4a94f] after:opacity-0 hover:text-white hover:after:opacity-80'
                 }`}
               >
                 {item.name}
@@ -205,7 +207,7 @@ const Header = () => {
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-2 lg:ml-3">
             {canOpenPage('/donate') && <Link
               to="/donate"
-              className="flex h-10 items-center justify-center rounded-full bg-primary-700 px-3 font-semibold text-white transition-colors hover:bg-primary-800 md:px-5"
+              className="flex h-10 items-center justify-center rounded-lg bg-[#f1ad55] px-3 font-bold text-[#123537] shadow-[0_4px_0_#bd702f] transition-all hover:-translate-y-0.5 hover:bg-[#ffc174] md:px-5"
               aria-label="Donate now"
             >
               <FiHeart className="lg:hidden" size={19} />
@@ -218,7 +220,7 @@ const Header = () => {
                   ref={userMenuButtonRef}
                   type="button"
                   onClick={() => setIsUserMenuOpen((open) => !open)}
-                  className="flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-white/80"
+                  className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-1 transition-colors hover:bg-white/10"
                   aria-label={isUserMenuOpen ? 'Close account menu' : 'Open account menu'}
                   aria-expanded={isUserMenuOpen}
                 >
@@ -233,18 +235,18 @@ const Header = () => {
                       />
                     )}
                   </span>
-                  <FiChevronDown className="hidden text-ink-700 sm:block" size={16} />
+                  <FiChevronDown className="hidden text-white/75 sm:block" size={16} />
                 </button>
 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white py-2 shadow-2xl">
-                    {canOpenPage('/profile') && <Link to="/profile" className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>}
+                    {canOpenPage('/profile') && <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>}
 
                     {(isAdmin || canViewUsers || canViewRoles) && (
                       <div className="mt-1 border-t border-gray-100 pt-1">
-                        {isAdmin && canOpenPage('/admin') && <Link to="/admin" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />Admin Dashboard</Link>}
-                        {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />User Management</Link>}
-                        {canViewRoles && canOpenPage('/roles') && <Link to="/roles" className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />Roles Management</Link>}
+                        {isAdmin && canOpenPage('/admin') && <Link to="/admin" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />Admin Dashboard</Link>}
+                        {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />User Management</Link>}
+                        {canViewRoles && canOpenPage('/roles') && <Link to="/roles" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />Roles Management</Link>}
                       </div>
                     )}
 
@@ -255,7 +257,7 @@ const Header = () => {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="flex h-10 items-center gap-1 rounded-full px-2 text-ink-800 transition-colors hover:bg-white/80 sm:px-3">
+              <Link to="/login" className="flex h-10 items-center gap-1 rounded-lg border border-white/15 px-2 text-white transition-colors hover:bg-white/10 sm:px-3">
                 <FiUser size={18} />
                 <span className="hidden lg:inline">Login</span>
               </Link>
@@ -272,7 +274,7 @@ const Header = () => {
           onClick={() => setIsMobileMenuOpen(false)}
           aria-label="Close navigation"
         />
-      <aside id="mobile-navigation" className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain border-r border-ink-100 bg-white p-4 shadow-2xl">
+      <aside id="mobile-navigation" className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain border-r border-white/10 bg-[#092b2d] p-4 shadow-2xl">
         <nav className="space-y-2" aria-label="Mobile navigation">
           {navigationItems.filter(item => canOpenPage(item.path)).map((item) => (
             <Link
@@ -281,8 +283,8 @@ const Header = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className={`block rounded-xl px-4 py-3 font-semibold transition-colors ${
                 isActive(item.path)
-                  ? 'bg-primary-100 text-primary-800'
-                  : 'text-ink-700 hover:bg-primary-50 hover:text-primary-700'
+                  ? 'bg-[#f1ad55] text-[#123537]'
+                  : 'text-white/80 hover:bg-white/10 hover:text-white'
               }`}
             >
               {item.name}

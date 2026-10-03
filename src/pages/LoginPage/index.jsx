@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import apiService from '../../services/api';
 import { ensureAccess } from '../../store/accessStore';
+import { ensurePaymentSettings } from '../../store/paymentSettingsStore';
 import loginPageImage from '../../asset/image/loginPage.jpg';
 
 const LoginPage = () => {
@@ -91,6 +92,7 @@ const LoginPage = () => {
       const response = await apiService.login({ email: loginData.email, password: loginData.password });
       const user = response.user;
       await dispatch(ensureAccess());
+      void dispatch(ensurePaymentSettings());
 
       if (loginData.rememberMe) {
         localStorage.setItem('rememberedEmail', loginData.email);

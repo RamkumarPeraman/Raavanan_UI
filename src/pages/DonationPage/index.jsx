@@ -2,6 +2,8 @@
 import { FiHeart, FiDownload, FiUpload, FiX, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import apiService from '../../services/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { ensurePaymentSettings, selectPaymentSettings } from '../../store/paymentSettingsStore';
 
 const projectOptions = [
   { value: 'general', label: 'General Fund' },
@@ -13,18 +15,10 @@ const projectOptions = [
 
 const predefinedAmounts = [100, 500, 1000, 2000, 5000, 10000];
 
-const defaultBank = {
-  accountHolder: 'Partha Sarathi V',
-  bank: 'Canara Bank',
-  branch: 'Pattiveeranpatti',
-  accountNo: '110301563866',
-  ifscCode: 'CNRB0008438',
-};
-
 const DonationPage = () => {
-  const [qrImage, setQrImage] = useState('');
-  const [bankDetails, setBankDetails] = useState(defaultBank);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const dispatch = useDispatch();
+  const { qrImage, bankDetails, status: settingsStatus } = useSelector(selectPaymentSettings);
+  const settingsLoaded = settingsStatus === 'ready';
 
   const [amount, setAmount] = useState('');
   const [customAmount, setCustomAmount] = useState('');
@@ -48,14 +42,10 @@ const DonationPage = () => {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    apiService.getAdminSettings().then((res) => {
-      if (res?.data) {
-        setQrImage(res.data.donationQrImage || '');
-        setBankDetails({ ...defaultBank, ...res.data.bankDetails });
-      }
-      setSettingsLoaded(true);
-    });
-  }, []);
+    if (settingsStatus === 'idle' || settingsStatus === 'failed') {
+      void dispatch(ensurePaymentSettings());
+    }
+  }, [dispatch, settingsStatus]);
 
   const handleAmountSelect = (value) => {
     setAmount(value);
