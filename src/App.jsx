@@ -9,6 +9,7 @@ import Footer from './components/common/FoundationFooter';
 import CommonTooltip from './components/common/CommonTooltip';
 import ProtectedRoute from './components/ProtectedRoute';
 import PageAccessGate from './components/PageAccessGate';
+import AccessBootstrap from './components/AccessBootstrap';
 
 // Pages for raavanan
 
@@ -47,8 +48,8 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects'].includes(location.pathname);
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects'].includes(location.pathname);
+  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
 
   return (
     <div className={isFullHeightPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
@@ -131,6 +132,7 @@ function AppLayout() {
 function App() {
   return (
     <Router>
+      <AccessBootstrap />
       <AppLayout />
     </Router>
   );

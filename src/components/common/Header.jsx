@@ -13,9 +13,11 @@ import {
   FiX,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
 import ravanaLogo from '../../asset/image/ravanan.png';
 import apiService from '../../services/api';
 import { pagePermissionByPath } from '../../constants/pageAccess';
+import { selectPermissions } from '../../store/accessStore';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') return role;
@@ -43,7 +45,7 @@ const Header = () => {
   const mobileMenuButtonRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
+  const permissions = useSelector(selectPermissions);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -137,15 +139,6 @@ const Header = () => {
     setIsUserMenuOpen(false);
     syncAuthState();
   }, [location]);
-
-  useEffect(() => {
-    if (!isLoggedIn) { setPermissions([]); return undefined; }
-    let active = true;
-    apiService.getMyRoleAccess().then(access => {
-      if (active) setPermissions(access.permissions || []);
-    }).catch(() => { if (active) setPermissions([]); });
-    return () => { active = false; };
-  }, [isLoggedIn, user?.id, user?.role, location.pathname]);
 
   const handleLogout = () => {
     apiService.logout();

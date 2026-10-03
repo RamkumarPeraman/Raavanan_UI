@@ -6,8 +6,10 @@ import CommonLoader from '../../components/common/CommonLoader';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiEdit2, FiEye, FiFilter, FiUsers, FiCheckCircle, FiShield, FiHeart, FiLock, FiPlus, FiSearch, FiTrash2, FiUnlock, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
 import apiService from '../../services/api';
 import UserPopup from '../../components/common/UserPopup';
+import { selectPermissions } from '../../store/accessStore';
 
 const roles = {
   super_admin: { name: 'Super Admin' },
@@ -54,11 +56,10 @@ const UserAvatar = ({ user, size = 'large' }) => {
 
 const UserGroupPageApi = () => {
   const [currentUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
-  const [rolePermissions, setRolePermissions] = useState([]);
+  const rolePermissions = useSelector(selectPermissions);
   const [availableRoles, setAvailableRoles] = useState(roles); // default to hardcoded
 
   useEffect(() => {
-    apiService.getMyRoleAccess().then(access => setRolePermissions(access.permissions || [])).catch(() => setRolePermissions([]));
     const fetchRoles = async () => {
       try {
         const response = await apiService.getRoles();

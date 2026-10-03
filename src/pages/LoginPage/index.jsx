@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
 import apiService from '../../services/api';
+import { ensureAccess } from '../../store/accessStore';
 import loginPageImage from '../../asset/image/loginPage.jpg';
 
 const LoginPage = () => {
@@ -12,6 +14,7 @@ const LoginPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [loginData, setLoginData] = useState({ email: '', password: '', rememberMe: false });
   const [signupData, setSignupData] = useState({ name: '', email: '', password: '', confirmPassword: '', agreeTerms: false });
@@ -76,6 +79,7 @@ const LoginPage = () => {
     try {
       const response = await apiService.login({ email: loginData.email, password: loginData.password });
       const user = response.user;
+      await dispatch(ensureAccess());
 
       if (loginData.rememberMe) {
         localStorage.setItem('rememberedEmail', loginData.email);

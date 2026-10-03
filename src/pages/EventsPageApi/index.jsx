@@ -1,275 +1,250 @@
-import CommonLoader from '../../components/common/CommonLoader';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { FiAlertCircle, FiAward, FiBookmark, FiCalendar, FiCamera, FiCheckCircle, FiChevronLeft, FiChevronRight, FiClock, FiDownload, FiHeart, FiMapPin, FiSearch, FiShare2, FiUsers } from 'react-icons/fi';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { toast } from 'react-toastify';
+import { FiBookmark, FiCalendar, FiCheckCircle, FiDownload, FiEye, FiFilter, FiSearch, FiShare2, FiUsers, FiX } from 'react-icons/fi';
+import CommonLoader from '../../components/common/CommonLoader';
+import CommonPopup from '../../components/common/CommonPopup';
+import CommonSelect from '../../components/common/CommonSelect';
+import Pagination from '../../components/common/Pagination';
 import apiService from '../../services/api';
 
-const categories = ['All', 'Fundraiser', 'Volunteer Training', 'Community Event', 'Awareness Campaign', 'Workshop', 'Conference', 'Cultural Event', 'Webinar'];
-const eventTypeColors = { Fundraiser: 'bg-purple-100 text-purple-800', 'Volunteer Training': 'bg-blue-100 text-blue-800', 'Community Event': 'bg-green-100 text-green-800', 'Awareness Campaign': 'bg-yellow-100 text-yellow-800', Workshop: 'bg-indigo-100 text-indigo-800', Conference: 'bg-red-100 text-red-800', 'Cultural Event': 'bg-pink-100 text-pink-800', Webinar: 'bg-teal-100 text-teal-800' };
+const typeColors = { Fundraiser: 'bg-purple-100 text-purple-800', 'Volunteer Training': 'bg-blue-100 text-blue-800', 'Community Event': 'bg-green-100 text-green-800', 'Awareness Campaign': 'bg-yellow-100 text-yellow-800', Workshop: 'bg-indigo-100 text-indigo-800', Conference: 'bg-red-100 text-red-800', 'Cultural Event': 'bg-pink-100 text-pink-800', Webinar: 'bg-teal-100 text-teal-800' };
+const eventId = event => String(event?.id || event?._id || '');
+const eventDay = value => {
+  if (!value) return null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+const isUpcoming = event => {
+  const day = eventDay(event.date);
+  return Boolean(day && day >= eventDay(new Date()));
+};
+const dateLabel = value => eventDay(value)?.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) || '—';
+const attendeeLabel = event => String(event.registered || 0) + (event.capacity ? ' / ' + event.capacity : '');
+const isFull = event => Number(event.capacity) > 0 && Number(event.registered || 0) >= Number(event.capacity);
+const escapeIcs = value => String(value || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
 const EventsPageApi = () => {
-  const [activeTab, setActiveTab] = useState('upcoming');
   const [events, setEvents] = useState([]);
+  const [registeredIds, setRegisteredIds] = useState([]);
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('bookmarkedEvents') || '[]');
+      return Array.isArray(saved) ? saved.map(String) : [];
+    } catch { return []; }
+  });
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [calendarFilterActive, setCalendarFilterActive] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [registeringId, setRegisteringId] = useState(null);
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [dateFilter, setDateFilter] = useState(null);
+  const [draftCategory, setDraftCategory] = useState('all');
+  const [draftDate, setDraftDate] = useState(null);
+  const [filterPosition, setFilterPosition] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [registeredEvents, setRegisteredEvents] = useState([]);
-  const [bookmarkedEvents, setBookmarkedEvents] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const filterButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
   const isAuthenticated = Boolean(localStorage.getItem('authToken'));
-  const eventsPerPage = 6;
 
-  const loadEventPageData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [eventData, registrationData] = await Promise.all([
-        apiService.getEvents(),
-        isAuthenticated ? apiService.getMyRegisteredEvents().catch(() => []) : Promise.resolve([]),
-      ]);
-      setEvents(eventData);
-      setRegisteredEvents(registrationData.map((event) => event.id));
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to load events.');
-    } finally {
-      setLoading(false);
-    }
+  const fetchEvents = useCallback(async () => {
+    const [eventResult, registrationResult] = await Promise.allSettled([
+      apiService.getEvents(),
+      isAuthenticated ? apiService.getMyRegisteredEvents() : Promise.resolve([]),
+    ]);
+    if (eventResult.status === 'fulfilled') setEvents(eventResult.value);
+    else { setLoadError(true); toast.error(eventResult.reason?.message || 'Failed to load events.'); }
+    if (registrationResult.status === 'fulfilled') setRegisteredIds(registrationResult.value.map(eventId));
+    setLoading(false);
   }, [isAuthenticated]);
-
   useEffect(() => {
-    const bookmarked = localStorage.getItem('bookmarkedEvents');
-    if (bookmarked) setBookmarkedEvents(JSON.parse(bookmarked));
-    loadEventPageData();
-  }, [isAuthenticated]);
-
+    void fetchEvents();
+  }, [fetchEvents]);
   useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, selectedCategory, searchTerm, selectedDate, calendarFilterActive]);
+    const sharedId = new URLSearchParams(window.location.search).get('event');
+    if (sharedId) apiService.getEventById(sharedId).then(setSelectedEvent).catch(() => toast.error('This event could not be found.'));
+  }, []);
+  const retry = () => { setLoading(true); setLoadError(false); void fetchEvents(); };
 
+  const categories = useMemo(() => [...new Set(events.map(event => event.type).filter(Boolean))].sort(), [events]);
+  const upcomingCount = events.filter(isUpcoming).length;
   const filteredEvents = useMemo(() => {
-    let filtered = [...events];
-    if (searchTerm) {
-      const query = searchTerm.toLowerCase();
-      filtered = filtered.filter((event) => event.title?.toLowerCase().includes(query) || event.description?.toLowerCase().includes(query) || event.location?.toLowerCase().includes(query));
-    }
-    if (selectedCategory !== 'all') filtered = filtered.filter((event) => event.type === selectedCategory);
-    if (calendarFilterActive) filtered = filtered.filter((event) => new Date(event.date).toDateString() === selectedDate.toDateString());
-    const now = new Date();
-    if (activeTab === 'upcoming') filtered = filtered.filter((event) => new Date(event.date) >= now);
-    if (activeTab === 'past') filtered = filtered.filter((event) => new Date(event.date) < now);
-    if (activeTab === 'registered') filtered = filtered.filter((event) => registeredEvents.includes(event.id));
-    return filtered;
-  }, [activeTab, calendarFilterActive, events, registeredEvents, searchTerm, selectedCategory, selectedDate]);
+    const query = search.trim().toLowerCase();
+    const dayKey = dateFilter?.toDateString();
+    return events.filter(event => {
+      if (category !== 'all' && event.type !== category) return false;
+      if (dayKey && eventDay(event.date)?.toDateString() !== dayKey) return false;
+      if (query && ![event.title, event.description, event.location, event.type].some(value => String(value || '').toLowerCase().includes(query))) return false;
+      if (activeTab === 'upcoming') return isUpcoming(event);
+      if (activeTab === 'past') return !isUpcoming(event);
+      if (activeTab === 'registered') return registeredIds.includes(eventId(event));
+      if (activeTab === 'gallery') return Boolean(event.image);
+      return true;
+    });
+  }, [events, category, dateFilter, search, activeTab, registeredIds]);
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filteredEvents.length / pageSize)));
+  const visibleEvents = filteredEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const tabs = [
+    { id: 'all', label: 'All Events', count: events.length },
+    { id: 'upcoming', label: 'Upcoming', count: upcomingCount },
+    { id: 'past', label: 'Past', count: events.length - upcomingCount },
+    { id: 'registered', label: 'My Registrations', count: registeredIds.length },
+    { id: 'gallery', label: 'Gallery', count: events.filter(event => event.image).length },
+  ];
 
-  const galleryEvents = useMemo(() => events.filter((event) => Boolean(event.image)), [events]);
-  const totalAttendees = useMemo(() => events.reduce((sum, event) => sum + (event.registered || 0), 0), [events]);
-  const workshopCount = useMemo(() => events.filter((event) => ['Workshop', 'Volunteer Training', 'Conference', 'Webinar'].includes(event.type)).length, [events]);
-  const upcomingThisMonth = useMemo(() => {
-    const now = new Date();
-    return events.filter((event) => {
-      const eventDate = new Date(event.date);
-      return eventDate >= now && eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
-    }).slice(0, 3);
-  }, [events]);
+  const openFilters = () => {
+    if (filterPosition) { setFilterPosition(null); return; }
+    setDraftCategory(category);
+    setDraftDate(dateFilter);
+    const rect = filterButtonRef.current.getBoundingClientRect();
+    setFilterPosition({ top: Math.min(rect.bottom + 6, Math.max(8, window.innerHeight - 510)), left: Math.max(8, Math.min(rect.left, window.innerWidth - 336)) });
+  };
+  useEffect(() => {
+    if (!filterPosition) return undefined;
+    const dismiss = event => {
+      if (!filterPanelRef.current?.contains(event.target) && !filterButtonRef.current?.contains(event.target) && !event.target.closest?.('[role="listbox"]')) setFilterPosition(null);
+    };
+    const keydown = event => { if (event.key === 'Escape') { setFilterPosition(null); filterButtonRef.current?.focus(); } };
+    const close = () => setFilterPosition(null);
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', keydown);
+    window.addEventListener('resize', close);
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', keydown); window.removeEventListener('resize', close); };
+  }, [filterPosition]);
 
-  const handleEventRegister = async (event) => {
-    if (!isAuthenticated) {
-      toast.error('Please login to register for an event.');
-      return;
-    }
-    if (registeredEvents.includes(event.id)) {
-      toast.info('You are already registered for this event.');
-      return;
-    }
+  const viewEvent = event => {
+    setSelectedEvent(event);
+    apiService.getEventById(eventId(event)).then(details => {
+      setSelectedEvent(previous => eventId(previous) === eventId(event) ? details : previous);
+    }).catch(() => toast.error('Could not load additional event details.'));
+  };
+  const toggleBookmark = id => {
+    const next = bookmarkedIds.includes(id) ? bookmarkedIds.filter(value => value !== id) : [...bookmarkedIds, id];
+    setBookmarkedIds(next);
+    localStorage.setItem('bookmarkedEvents', JSON.stringify(next));
+  };
+  const register = async event => {
+    const id = eventId(event);
+    if (!isAuthenticated) { toast.info('Please log in to register for an event.'); return; }
+    if (registeredIds.includes(id) || registeringId) return;
+    setRegisteringId(id);
     try {
-      const response = await apiService.registerForEvent(event.id);
-      const count = response.data?.registered ?? (event.registered || 0) + 1;
-      setRegisteredEvents((prev) => [...prev, event.id]);
-      setEvents((prev) => prev.map((item) => (item.id === event.id ? { ...item, registered: count } : item)));
-      setSelectedEvent((prev) => (prev?.id === event.id ? { ...prev, registered: count } : prev));
-      toast.success(`Successfully registered for ${event.title}!`);
+      const response = await apiService.registerForEvent(id);
+      const count = response.data?.registered ?? Number(event.registered || 0) + 1;
+      setRegisteredIds(previous => [...previous, id]);
+      setEvents(previous => previous.map(item => eventId(item) === id ? { ...item, registered: count } : item));
+      setSelectedEvent(previous => eventId(previous) === id ? { ...previous, registered: count } : previous);
+      toast.success('Registered for ' + event.title + '.');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
-    }
+    } finally { setRegisteringId(null); }
   };
-
-  const handleBookmark = (eventId) => {
-    const updated = bookmarkedEvents.includes(eventId) ? bookmarkedEvents.filter((id) => id !== eventId) : [...bookmarkedEvents, eventId];
-    setBookmarkedEvents(updated);
-    localStorage.setItem('bookmarkedEvents', JSON.stringify(updated));
-    toast[bookmarkedEvents.includes(eventId) ? 'info' : 'success'](bookmarkedEvents.includes(eventId) ? 'Removed from bookmarks' : 'Added to bookmarks');
+  const share = async event => {
+    const url = new URL('/events', window.location.origin);
+    url.searchParams.set('event', eventId(event));
+    try {
+      if (navigator.share) await navigator.share({ title: event.title, text: event.description, url: url.toString() });
+      else { await navigator.clipboard.writeText(url.toString()); toast.success('Event link copied.'); }
+    } catch (error) { if (error.name !== 'AbortError') toast.error('Could not share the event.'); }
   };
-
-  const handleShare = async (event) => {
-    const url = `${window.location.origin}/events/${event.id}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: event.title, text: event.description, url }); } catch (error) { console.log('Share cancelled'); }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success('Event link copied to clipboard!');
-    }
-  };
-
-  const downloadICS = (event) => {
-    const [startTime = '09:00', endTime = '17:00'] = String(event.time || '').split(' - ');
-    const datePart = new Date(event.date).toISOString().split('T')[0];
-    const startDate = new Date(`${datePart}T${startTime}`);
-    const endDate = new Date(`${datePart}T${endTime}`);
-    const ics = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Raavana Thalaigal Trust//Events//EN
-BEGIN:VEVENT
-UID:${event.id}@raavanathalaigal.org
-DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTSTART:${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTEND:${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-SUMMARY:${event.title}
-DESCRIPTION:${event.description}
-LOCATION:${event.location}
-END:VEVENT
-END:VCALENDAR`;
-    const blob = new Blob([ics], { type: 'text/calendar' });
-    const url = window.URL.createObjectURL(blob);
+  const downloadCalendar = event => {
+    const start = eventDay(event.date);
+    if (!start) { toast.error('This event has no valid date.'); return; }
+    const parts = [...String(event.time || '').matchAll(/(\d{1,2}):(\d{2})\s*(AM|PM)?/gi)];
+    const setTime = (date, part, fallbackHour) => {
+      let hour = part ? Number(part[1]) : fallbackHour;
+      if (part?.[3]) hour = (hour % 12) + (part[3].toUpperCase() === 'PM' ? 12 : 0);
+      date.setHours(hour, part ? Number(part[2]) : 0, 0, 0);
+    };
+    setTime(start, parts[0], 9);
+    const end = new Date(start);
+    if (parts[1]) setTime(end, parts[1], 11);
+    else end.setHours(start.getHours() + 2);
+    if (end <= start) end.setDate(end.getDate() + 1);
+    const stamp = date => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Raavana Thalaigal Trust//Events//EN', 'BEGIN:VEVENT', 'UID:' + eventId(event) + '@raavanathalaigal.org', 'DTSTAMP:' + stamp(new Date()), 'DTSTART:' + stamp(start), 'DTEND:' + stamp(end), 'SUMMARY:' + escapeIcs(event.title), 'DESCRIPTION:' + escapeIcs(event.description), 'LOCATION:' + escapeIcs(event.location), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `${event.title}.ics`;
+    anchor.download = (event.title || 'event') + '.ics';
     anchor.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('Calendar file downloaded!');
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const registrationAction = event => {
+    const id = eventId(event);
+    if (registeredIds.includes(id)) return <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700"><FiCheckCircle />Registered</span>;
+    if (!isUpcoming(event)) return <span className="text-xs text-gray-500">Past event</span>;
+    if (isFull(event)) return <span className="text-xs text-gray-500">Full</span>;
+    return <button type="button" disabled={Boolean(registeringId)} onClick={() => register(event)} className="rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50">{registeringId === id ? 'Registering…' : 'Register'}</button>;
   };
 
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const currentEvents = filteredEvents.slice((currentPage - 1) * eventsPerPage, currentPage * eventsPerPage);
-  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
-
-  if (loading) return (
-    <div className="flex min-h-[60dvh] items-center justify-center bg-gray-50 pt-20">
-      <CommonLoader size="lg" label="Loading events…" showLabel />
-    </div>
-  );
-
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
-      <div className="container-custom">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Events & Updates</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">Join us in our mission through various events, workshops, and community gatherings. Register for upcoming events or explore our past activities.</p>
+    <div className="flex h-full min-w-0 flex-col gap-3 overflow-hidden bg-gray-50 px-[5px] pt-20">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex min-w-0 max-w-full gap-1 overflow-x-auto">
+          {tabs.map(tab => <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} onClick={() => { setActiveTab(tab.id); setPage(1); }} className={'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-xs font-medium ' + (activeTab === tab.id ? 'border-primary-300 bg-primary-50 text-primary-800 ring-1 ring-primary-500' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100')}>{tab.label}<span>{tab.count}</span></button>)}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {[{ icon: FiCalendar, value: events.length, label: 'Total Events' }, { icon: FiClock, value: events.filter((event) => new Date(event.date) >= new Date()).length, label: 'Upcoming' }, { icon: FiUsers, value: totalAttendees, label: 'Attendees' }, { icon: FiAward, value: workshopCount, label: 'Workshops' }].map((stat, index) => <div key={index} className="bg-white rounded-lg shadow-lg p-6 text-center"><stat.icon className="w-8 h-8 text-primary-600 mx-auto mb-3" /><div className="text-2xl font-bold text-gray-900">{stat.value}</div><div className="text-sm text-gray-600">{stat.label}</div></div>)}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
-              {['upcoming', 'past', 'registered', 'gallery'].map((tab) => <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === tab ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}>{tab === 'upcoming' ? 'Upcoming Events' : tab === 'past' ? 'Past Events' : tab === 'registered' ? 'My Registrations' : 'Event Gallery'}</button>)}
-            </div>
-            <div className="bg-white rounded-lg shadow p-4 mb-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input type="text" placeholder="Search events..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div className="md:w-48">
-                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none">
-                    {categories.map((category) => <option key={category} value={category === 'All' ? 'all' : category}>{category}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {activeTab !== 'gallery' ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {currentEvents.map((event) => (
-                    <div key={event.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                      {event.image && <div className="h-40 bg-gray-300 relative"><img src={event.image} alt={event.title} className="w-full h-full object-cover" /><div className="absolute top-4 right-4"><button onClick={() => handleBookmark(event.id)} className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"><FiBookmark className={bookmarkedEvents.includes(event.id) ? 'fill-primary-600 text-primary-600' : 'text-gray-600'} size={16} /></button></div></div>}
-                      <div className="p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`text-xs px-2 py-1 rounded-full font-semibold ${eventTypeColors[event.type] || 'bg-gray-100 text-gray-800'}`}>{event.type}</span>
-                          <span className="text-xs text-gray-500 flex items-center"><FiUsers className="mr-1" size={12} />{event.registered || 0}{event.capacity ? `/${event.capacity}` : ''} registered</span>
-                        </div>
-                        <h3 className="text-lg font-bold mb-2">{event.title}</h3>
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center text-sm text-gray-600"><FiCalendar className="mr-2 text-primary-600" size={14} />{formatDate(event.date)}</div>
-                          <div className="flex items-center text-sm text-gray-600"><FiClock className="mr-2 text-primary-600" size={14} />{event.time}</div>
-                          <div className="flex items-center text-sm text-gray-600"><FiMapPin className="mr-2 text-primary-600" size={14} />{event.location}</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => { setSelectedEvent(event); setShowEventModal(true); }} className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">Details</button>
-                          {new Date(event.date) >= new Date() && (registeredEvents.includes(event.id) ? <button disabled className="flex-1 bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center"><FiCheckCircle className="mr-1" />Registered</button> : <button onClick={() => handleEventRegister(event)} className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium">Register</button>)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {filteredEvents.length === 0 && <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500 mt-6">No events found for the current filters.</div>}
-                {totalPages > 1 && <div className="flex justify-center mt-8"><nav className="flex items-center space-x-2"><button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border border-gray-300 disabled:opacity-50"><FiChevronLeft /></button>{[...Array(totalPages)].map((_, index) => <button key={index} onClick={() => setCurrentPage(index + 1)} className={`px-4 py-2 rounded-lg ${currentPage === index + 1 ? 'bg-primary-600 text-white' : 'border border-gray-300 hover:bg-gray-50'}`}>{index + 1}</button>)}<button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-gray-300 disabled:opacity-50"><FiChevronRight /></button></nav></div>}
-              </>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {galleryEvents.length > 0 ? galleryEvents.map((event) => <div key={event.id} className="relative group cursor-pointer" onClick={() => { setSelectedEvent(event); setShowEventModal(true); }}><div className="aspect-square bg-gray-300 rounded-lg overflow-hidden"><img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" /></div><div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center"><div className="text-center text-white px-4"><FiCamera className="mx-auto mb-2" size={30} /><p className="text-sm font-semibold">{event.title}</p></div></div></div>) : <div className="col-span-full bg-white rounded-lg border border-dashed border-gray-300 p-10 text-center text-gray-500">No event images available yet.</div>}
-              </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">Event Calendar</h3>
-              <Calendar onChange={(date) => { setSelectedDate(date); setCalendarFilterActive(true); }} value={selectedDate} tileClassName={({ date, view }) => view === 'month' && events.some((event) => new Date(event.date).toDateString() === date.toDateString()) ? 'event-day' : null} className="w-full border-none" />
-              <p className="text-sm text-gray-600 mt-4 text-center">{calendarFilterActive ? `Events on ${selectedDate.toLocaleDateString()}: ${filteredEvents.length}` : `Showing all matching events: ${filteredEvents.length}`}</p>
-              {calendarFilterActive && <button onClick={() => setCalendarFilterActive(false)} className="mt-3 w-full text-sm text-primary-600 font-semibold hover:text-primary-700">Clear date filter</button>}
-            </div>
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">Upcoming This Month</h3>
-              <div className="space-y-4">
-                {upcomingThisMonth.length > 0 ? upcomingThisMonth.map((event) => <div key={event.id} className="flex items-start space-x-3 pb-4 border-b last:border-0"><div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex flex-col items-center justify-center"><span className="text-xs text-primary-600 font-semibold">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span><span className="text-lg font-bold text-primary-600">{new Date(event.date).getDate()}</span></div><div className="flex-1"><h4 className="font-semibold text-sm">{event.title}</h4><p className="text-xs text-gray-500 flex items-center mt-1"><FiMapPin className="mr-1" size={10} />{event.location}</p></div></div>) : <p className="text-sm text-gray-500">No upcoming events this month.</p>}
-              </div>
-              <button onClick={() => setActiveTab('upcoming')} className="w-full mt-4 text-primary-600 font-semibold text-sm hover:text-primary-700">View All Events →</button>
-            </div>
-            <div className="bg-primary-50 rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4 text-primary-800">Organize an Event</h3>
-              <p className="text-primary-700 text-sm mb-4">Want to collaborate or organize an event with us? We&apos;d love to hear your ideas!</p>
-              <Link to="/contact" className="block w-full bg-primary-600 text-white text-center px-4 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold">Contact Us</Link>
-            </div>
-          </div>
-        </div>
-
-        {showEventModal && selectedEvent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              {selectedEvent.image && <div className="h-64 md:h-80 bg-gray-300 relative"><img src={selectedEvent.image} alt={selectedEvent.title} className="w-full h-full object-cover" /><div className="absolute top-4 right-4 flex space-x-2"><button onClick={() => handleBookmark(selectedEvent.id)} className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"><FiBookmark className={bookmarkedEvents.includes(selectedEvent.id) ? 'fill-primary-600 text-primary-600' : 'text-gray-600'} size={20} /></button><button onClick={() => handleShare(selectedEvent)} className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"><FiShare2 size={20} /></button><button onClick={() => downloadICS(selectedEvent)} className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"><FiDownload size={20} /></button></div></div>}
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6"><span className={`px-3 py-1 rounded-full text-sm font-semibold ${eventTypeColors[selectedEvent.type] || 'bg-gray-100 text-gray-800'}`}>{selectedEvent.type}</span><span className="text-sm text-gray-500 flex items-center"><FiUsers className="mr-1" />{selectedEvent.registered || 0}{selectedEvent.capacity ? `/${selectedEvent.capacity}` : ''} registered</span></div>
-                <h2 className="text-3xl font-bold mb-4">{selectedEvent.title}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="space-y-4"><div className="flex items-start"><FiCalendar className="text-primary-600 mr-3 mt-1 flex-shrink-0" size={20} /><div><p className="font-semibold">Date</p><p className="text-gray-600">{formatDate(selectedEvent.date)}</p></div></div><div className="flex items-start"><FiClock className="text-primary-600 mr-3 mt-1 flex-shrink-0" size={20} /><div><p className="font-semibold">Time</p><p className="text-gray-600">{selectedEvent.time}</p></div></div></div>
-                  <div className="space-y-4"><div className="flex items-start"><FiMapPin className="text-primary-600 mr-3 mt-1 flex-shrink-0" size={20} /><div><p className="font-semibold">Location</p><p className="text-gray-600">{selectedEvent.location}</p></div></div>{selectedEvent.price > 0 ? <div className="flex items-start"><FiAward className="text-primary-600 mr-3 mt-1 flex-shrink-0" size={20} /><div><p className="font-semibold">Entry Fee</p><p className="text-gray-600">₹{selectedEvent.price}</p></div></div> : <div className="flex items-start"><FiHeart className="text-primary-600 mr-3 mt-1 flex-shrink-0" size={20} /><div><p className="font-semibold">Entry</p><p className="text-gray-600">Free Event</p></div></div>}</div>
-                </div>
-                <div className="mb-8"><h3 className="text-lg font-semibold mb-3">About the Event</h3><p className="text-gray-700 leading-relaxed">{selectedEvent.description}</p></div>
-                {selectedEvent.speakers?.length > 0 && <div className="mb-8"><h3 className="text-lg font-semibold mb-4">Speakers</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{selectedEvent.speakers.map((speaker, index) => <div key={index} className="flex items-center space-x-3"><div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center"><span className="text-primary-600 font-bold text-lg">{speaker.charAt(0)}</span></div><div><p className="font-semibold">{speaker}</p><p className="text-sm text-gray-500">Guest Speaker</p></div></div>)}</div></div>}
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"><div className="flex items-center"><FiAlertCircle className="text-primary-600 mr-2" size={20} /><span className="text-sm text-gray-600">{selectedEvent.capacity > 0 ? `${Math.max(selectedEvent.capacity - (selectedEvent.registered || 0), 0)} spots remaining` : 'Open registration'}</span></div>{new Date(selectedEvent.date) >= new Date() && (registeredEvents.includes(selectedEvent.id) ? <button disabled className="bg-green-100 text-green-700 px-8 py-3 rounded-lg font-semibold flex items-center"><FiCheckCircle className="mr-2" />Already Registered</button> : <button onClick={() => handleEventRegister(selectedEvent)} className="btn-primary">Register Now</button>)}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <style jsx>{`
-          .react-calendar { width: 100%; border: none; font-family: inherit; }
-          .react-calendar__tile--active { background: #ed1515 !important; color: white; }
-          .react-calendar__tile--active:enabled:hover, .react-calendar__tile--active:enabled:focus { background: #c80d0d !important; }
-          .event-day { background-color: #fee7e7; font-weight: bold; color: #ed1515; position: relative; }
-          .event-day::after { content: '•'; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); color: #ed1515; font-size: 12px; }
-        `}</style>
+        <div className="relative w-full sm:ml-auto sm:w-48"><FiSearch className="absolute left-2.5 top-2.5 text-gray-400" /><input aria-label="Search events" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search events…" className="h-[34px] w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs focus:border-primary-500 focus:outline-none" /></div>
+        <button ref={filterButtonRef} type="button" aria-expanded={Boolean(filterPosition)} aria-controls="event-filter-panel" onClick={openFilters} className={'inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium hover:bg-primary-50 ' + (category !== 'all' || dateFilter ? 'border-primary-400 bg-primary-50 text-primary-800' : 'border-gray-200 bg-white text-primary-700')}><FiFilter />Filters</button>
+        <Link to="/contact" className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-100">Organize an event</Link>
       </div>
+
+      {filterPosition && createPortal(
+        <section ref={filterPanelRef} id="event-filter-panel" role="dialog" aria-label="Event filters" tabIndex={-1} style={filterPosition} className="fixed z-50 w-80 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl outline-none">
+          <div className="flex items-center justify-between px-4 pt-3 text-sm font-semibold text-slate-800">Filters<button type="button" aria-label="Close filters" onClick={() => setFilterPosition(null)} className="rounded p-1 text-slate-500 hover:bg-slate-100"><FiX /></button></div>
+          <div className="space-y-4 p-4">
+            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Category</label><CommonSelect label="Category" value={draftCategory} onChange={setDraftCategory} options={[{ value: 'all', label: 'All Categories' }, ...categories.map(value => ({ value, label: value }))]} /></div>
+            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Event date</label><Calendar value={draftDate} onChange={setDraftDate} tileClassName={({ date, view }) => view === 'month' && events.some(event => eventDay(event.date)?.toDateString() === date.toDateString()) ? 'event-day' : null} className="event-filter-calendar" />{draftDate && <button type="button" onClick={() => setDraftDate(null)} className="mt-2 text-xs text-primary-700 underline">Clear date</button>}</div>
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3"><button type="button" onClick={() => { setDraftCategory('all'); setDraftDate(null); }} className="text-xs text-slate-500 hover:text-slate-900">Clear</button><button type="button" onClick={() => { setCategory(draftCategory); setDateFilter(draftDate); setPage(1); setFilterPosition(null); filterButtonRef.current?.focus(); }} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">Apply</button></div>
+        </section>, document.body
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
+        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader size="lg" label="Loading events…" showLabel /></div>
+          : loadError ? <div className="flex min-h-0 flex-1 items-center justify-center gap-2 text-sm text-gray-600">Could not load events. <button type="button" onClick={retry} className="text-primary-700 underline">Retry</button></div>
+            : filteredEvents.length === 0 ? <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-gray-500">{activeTab === 'registered' && !isAuthenticated ? 'Log in to see your event registrations.' : 'No events match this view.'}</div>
+              : activeTab === 'gallery' ? <div className="admin-table-scroll grid min-h-0 flex-1 auto-rows-max grid-cols-2 gap-3 overflow-y-auto bg-slate-50 p-3 sm:grid-cols-3 lg:grid-cols-5">{visibleEvents.map(event => <button key={eventId(event)} type="button" onClick={() => viewEvent(event)} className="overflow-hidden rounded-lg border bg-white text-left hover:border-primary-300 hover:shadow"><div className="aspect-square bg-gray-100"><img src={event.image} alt="" className="h-full w-full object-cover" /></div><div className="truncate p-2 text-xs font-medium text-gray-800">{event.title}</div></button>)}</div>
+                : <>
+                  <div className="admin-table-scroll hidden min-h-0 flex-1 overflow-auto overscroll-contain lg:block">
+                    <table className="w-full table-fixed text-sm"><colgroup><col className="w-[27%]" /><col className="w-[13%]" /><col className="w-[16%]" /><col className="w-[14%]" /><col className="w-[11%]" /><col className="w-[19%]" /></colgroup>
+                      <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50"><tr>{['Event', 'Type', 'Date & Time', 'Location', 'Attendees', 'Actions'].map(label => <th key={label} className={'px-3 py-3 text-left text-xs font-medium uppercase text-gray-500 ' + (label === 'Actions' ? 'text-right' : '')}>{label}</th>)}</tr></thead>
+                      <tbody className="divide-y divide-gray-100">{visibleEvents.map(event => <tr key={eventId(event)} className="hover:bg-slate-50">
+                        <td className="px-3 py-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{event.image ? <img src={event.image} alt="" className="h-full w-full object-cover" /> : <FiCalendar />}</div><div className="min-w-0"><div className="truncate font-medium text-gray-900" title={event.title}>{event.title}</div><div className="truncate text-xs text-gray-500" title={event.description || ''}>{event.description || '—'}</div></div></div></td>
+                        <td className="truncate px-3 py-3"><span className={'rounded-full px-2 py-1 text-xs ' + (typeColors[event.type] || 'bg-gray-100 text-gray-700')}>{event.type || '—'}</span></td>
+                        <td className="px-3 py-3 text-gray-600"><div>{dateLabel(event.date)}</div><div className="truncate text-xs text-gray-500" title={event.time || ''}>{event.time || '—'}</div></td>
+                        <td className="truncate px-3 py-3 text-gray-600" title={event.location || ''}>{event.location || '—'}</td>
+                        <td className="px-3 py-3 text-gray-600">{attendeeLabel(event)}</td>
+                        <td className="px-3 py-3"><div className="flex items-center justify-end gap-2"><button type="button" onClick={() => viewEvent(event)} aria-label={'View ' + event.title} className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-primary-700 hover:bg-primary-50"><FiEye />View</button>{registrationAction(event)}</div></td>
+                      </tr>)}</tbody>
+                    </table>
+                  </div>
+                  <div className="admin-table-scroll min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2 lg:hidden">{visibleEvents.map(event => <article key={eventId(event)} className="rounded-lg border bg-white p-3 text-sm"><div className="flex gap-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{event.image ? <img src={event.image} alt="" className="h-full w-full object-cover" /> : <FiCalendar />}</div><div className="min-w-0 flex-1"><h2 className="truncate font-semibold text-gray-900">{event.title}</h2><p className="mt-1 truncate text-xs text-gray-500">{event.type || 'Event'} · {event.location || 'Location unavailable'}</p><p className="mt-1 text-xs text-gray-500">{dateLabel(event.date)} · {event.time || 'Time TBA'}</p></div></div><p className="mt-2 line-clamp-2 text-gray-600">{event.description}</p><div className="mt-2 flex items-center justify-between gap-2 border-t pt-2"><span className="text-xs text-gray-500"><FiUsers className="mr-1 inline" />{attendeeLabel(event)}</span><div className="flex items-center gap-2"><button type="button" onClick={() => viewEvent(event)} className="inline-flex items-center gap-1 text-primary-700"><FiEye />View</button>{registrationAction(event)}</div></div></article>)}</div>
+                </>}
+        <Pagination page={currentPage} pageSize={pageSize} total={filteredEvents.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} disabled={loading} itemLabel="Events" />
+      </div>
+
+      <CommonPopup open={Boolean(selectedEvent)} title={<div className="flex flex-wrap items-center gap-2"><span>{selectedEvent?.title || 'Event details'}</span>{selectedEvent?.type && <span className={'rounded-full px-2.5 py-1 text-xs font-medium ' + (typeColors[selectedEvent.type] || 'bg-gray-100 text-gray-700')}>{selectedEvent.type}</span>}</div>} onClose={() => setSelectedEvent(null)} size="lg" footer={selectedEvent && <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => toggleBookmark(eventId(selectedEvent))} aria-label={bookmarkedIds.includes(eventId(selectedEvent)) ? 'Remove bookmark' : 'Bookmark event'} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiBookmark className={bookmarkedIds.includes(eventId(selectedEvent)) ? 'fill-primary-600 text-primary-600' : ''} />Bookmark</button><button type="button" onClick={() => share(selectedEvent)} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiShare2 />Share</button><button type="button" onClick={() => downloadCalendar(selectedEvent)} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiDownload />Calendar</button>{registrationAction(selectedEvent)}<button type="button" onClick={() => setSelectedEvent(null)} className="rounded border border-gray-300 px-3 py-1.5 text-gray-700">Close</button></div>}>
+        {selectedEvent && <div className="space-y-5">
+          <div className={selectedEvent.image ? 'grid gap-4 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]' : ''}>
+            {selectedEvent.image && <div className="flex h-48 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-2"><img src={selectedEvent.image} alt={selectedEvent.title} className="h-full w-full object-contain" /></div>}
+            <div className="min-w-0"><h3 className="mb-1 font-semibold text-gray-900">About the event</h3><p className="whitespace-pre-wrap text-gray-700">{selectedEvent.description || 'No description available.'}</p></div>
+          </div>
+          <div className="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2"><div><span className="text-gray-500">Date</span><p className="font-medium">{dateLabel(selectedEvent.date)}</p></div><div><span className="text-gray-500">Time</span><p className="font-medium">{selectedEvent.time || '—'}</p></div><div><span className="text-gray-500">Location</span><p className="font-medium">{selectedEvent.location || '—'}</p></div><div><span className="text-gray-500">Attendees</span><p className="font-medium">{attendeeLabel(selectedEvent)}</p></div><div><span className="text-gray-500">Entry</span><p className="font-medium">{Number(selectedEvent.price) > 0 ? '₹' + Number(selectedEvent.price).toLocaleString('en-IN') : 'Free'}</p></div><div><span className="text-gray-500">Availability</span><p className="font-medium">{isFull(selectedEvent) ? 'Full' : selectedEvent.capacity ? Math.max(Number(selectedEvent.capacity) - Number(selectedEvent.registered || 0), 0) + ' spots remaining' : 'Open registration'}</p></div></div>
+          {Array.isArray(selectedEvent.speakers) && selectedEvent.speakers.length > 0 && <div><h3 className="mb-2 font-semibold text-gray-900">Speakers</h3><div className="flex flex-wrap gap-2">{selectedEvent.speakers.map((speaker, index) => <span key={index} className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800">{speaker}</span>)}</div></div>}
+        </div>}
+      </CommonPopup>
+      <style>{'.event-filter-calendar.react-calendar { width: 100%; border: 0; font-family: inherit; } .event-filter-calendar .react-calendar__tile--active { background: #1b736f !important; color: white; } .event-filter-calendar .event-day { background-color: #e4f5f2; font-weight: 600; }'}</style>
     </div>
   );
 };

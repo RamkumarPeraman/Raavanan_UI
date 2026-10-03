@@ -337,8 +337,7 @@ const AccountSettingsPage = () => {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      apiService.logout();
       toast.success('Account deleted successfully');
       navigate('/');
     } catch (error) {

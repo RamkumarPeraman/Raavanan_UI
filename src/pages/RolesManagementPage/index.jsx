@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
 import { FiEdit2, FiPlus, FiTrash2, FiShield } from 'react-icons/fi';
 import CommonPopup from '../../components/common/CommonPopup';
 import Pagination from '../../components/common/Pagination';
 import apiService from '../../services/api';
+import { refreshAccess } from '../../store/accessStore';
 import { accountFlowPages, pageGroups, pagePermissions } from '../../constants/pageAccess';
 
 const isProtectedRole = role => role.isSystem || ['super_admin', 'admin', 'member'].includes(role.name?.toLowerCase());
 
 const RolesManagementPage = () => {
+  const dispatch = useDispatch();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [permissionGroups, setPermissionGroups] = useState({});
@@ -68,6 +71,7 @@ const RolesManagementPage = () => {
       const payload = { displayName, description: draft.description.trim(), permissions };
       if (editing.mode === 'create') await apiService.createRole({ ...payload, name });
       else await apiService.updateRole(editing.role.id, payload);
+      await dispatch(refreshAccess());
       if (editing.mode === 'create') setPage(Math.ceil((roles.length + 1) / pageSize));
       toast.success(editing.mode === 'create' ? 'Role created successfully' : 'Role updated successfully');
       setEditing(null);
@@ -83,6 +87,7 @@ const RolesManagementPage = () => {
     setDeletingId(deleteTarget.id);
     try {
       await apiService.deleteRole(deleteTarget.id);
+      await dispatch(refreshAccess());
       toast.success('Role deleted successfully');
       setDeleteTarget(null);
       await fetchRoles();

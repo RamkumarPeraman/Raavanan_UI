@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import apiService from '../services/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { ensureAccess, selectAccess } from '../store/accessStore';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') {
@@ -22,22 +22,12 @@ const normalizeRole = (role) => {
 };
 
 const ProtectedRoute = ({ children, requiredRole, requiredPermission }) => {
+  const dispatch = useDispatch();
+  const access = useSelector(selectAccess);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-  const userId = user?.id;
   const token = localStorage.getItem('authToken');
-  const [allowed, setAllowed] = useState(null);
-
-  useEffect(() => {
-    if (!requiredPermission || !token || !userId) return undefined;
-    let active = true;
-    apiService.getMyRoleAccess()
-      .then(access => { if (active) setAllowed(access.permissions?.includes(requiredPermission) || false); })
-      .catch(() => { if (active) setAllowed(false); });
-    return () => { active = false; };
-  }, [requiredPermission, token, userId, user?.role]);
 
   if (!token || !user) {
-    toast.error('Please login to access this page');
     return <Navigate to="/login" replace />;
   }
 
@@ -45,13 +35,12 @@ const ProtectedRoute = ({ children, requiredRole, requiredPermission }) => {
   const userRole = normalizeRole(user.role);
 
   if (normalizedRequiredRoles.length > 0 && !normalizedRequiredRoles.includes(userRole)) {
-    toast.error('You do not have permission to access this page');
     return <Navigate to="/" replace />;
   }
 
-  if (requiredPermission && allowed === null) return <div className="p-8 text-center text-gray-500">Checking access...</div>;
-  if (requiredPermission && !allowed) {
-    toast.error('You do not have permission to access this page');
+  if (requiredPermission && (access.token !== token || ['idle', 'loading'].includes(access.status))) return <div className="p-8 text-center text-gray-500">Checking access...</div>;
+  if (requiredPermission && access.status === 'failed') return <div className="p-8 text-center text-gray-500">Could not verify access. <button type="button" onClick={() => { void dispatch(ensureAccess()); }} className="text-primary-700 underline">Retry</button></div>;
+  if (requiredPermission && !access.permissions.includes(requiredPermission)) {
     return <Navigate to="/" replace />;
   }
 
