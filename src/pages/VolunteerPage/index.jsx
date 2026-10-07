@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import apiService from '../../services/api';
 import CommonPopup from '../../components/common/CommonPopup';
 import Pagination from '../../components/common/Pagination';
+import VolunteerDatePicker from '../../components/volunteer/VolunteerDatePicker';
 
 const LINK_PATTERN = /(https?:\/\/[^\s]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
 
@@ -132,12 +133,11 @@ const VolunteerPage = () => {
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [opportunityPage, setOpportunityPage] = useState(1);
   const [opportunityPageSize, setOpportunityPageSize] = useState(5);
-  const formSectionRef = useRef(null);
+  const formScrollRef = useRef(null);
   const hasMounted = useRef(false);
 
   function scrollToFormTop() {
-    if (!formSectionRef.current) return;
-    formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    formScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const [formPage, setFormPage] = useState(1);
@@ -325,14 +325,14 @@ const VolunteerPage = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f5f7f6]">
-      <div className="flex h-full min-h-0 w-full flex-col px-[5px]">
+    <div className="h-full min-h-0 bg-[#f5f7f6]">
+      <div className="grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] gap-[5px] p-[5px] lg:grid-cols-[220px_minmax(0,1fr)] lg:grid-rows-1">
         {/* Navigation Tabs */}
-        <div className="z-20 mb-2 shrink-0 bg-[#f5f7f6]/95 py-3 backdrop-blur-sm">
-        <div className="flex w-fit max-w-full gap-2 overflow-x-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm">
+        <nav aria-label="Volunteer sections" className="self-start">
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-gray-200 bg-white p-2 shadow-sm sm:grid-cols-4 lg:grid-cols-1">
           <button
             onClick={() => setActiveTab('opportunities')}
-            className={`rounded-lg px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${activeTab === 'opportunities'
+            className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeTab === 'opportunities'
                 ? 'bg-[#092b2d] text-white shadow-sm'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
@@ -341,7 +341,7 @@ const VolunteerPage = () => {
           </button>
           <button
             onClick={() => setActiveTab('apply')}
-            className={`rounded-lg px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${activeTab === 'apply'
+            className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeTab === 'apply'
                 ? 'bg-[#092b2d] text-white shadow-sm'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
@@ -350,7 +350,7 @@ const VolunteerPage = () => {
           </button>
           <button
             onClick={() => setActiveTab('testimonials')}
-            className={`rounded-lg px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${activeTab === 'testimonials'
+            className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeTab === 'testimonials'
                 ? 'bg-[#092b2d] text-white shadow-sm'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
@@ -359,7 +359,7 @@ const VolunteerPage = () => {
           </button>
           <button
             onClick={() => setActiveTab('faq')}
-            className={`rounded-lg px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${activeTab === 'faq'
+            className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeTab === 'faq'
                 ? 'bg-[#092b2d] text-white shadow-sm'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
@@ -367,15 +367,15 @@ const VolunteerPage = () => {
             FAQs
           </button>
         </div>
-        </div>
+        </nav>
 
-        <div className={activeTab === 'opportunities' ? 'min-h-0 flex-1' : 'min-h-0 flex-1 overflow-y-auto overscroll-contain pb-10'}>
+        <div className="min-h-0 min-w-0 overflow-hidden">
         {/* Opportunities Tab */}
         {activeTab === 'opportunities' && (
-          <section aria-label="Volunteer opportunities" className="flex h-full min-h-0 flex-col overflow-hidden rounded-t-xl border border-gray-200 bg-white shadow-sm">
-            <div className="min-h-0 flex-1 overflow-auto">
-              <table className="w-full min-w-[820px] table-fixed text-sm">
-                <colgroup><col className="w-[29%]" /><col className="w-[18%]" /><col className="w-[16%]" /><col className="w-[17%]" /><col className="w-[9%]" /><col className="w-[11%]" /></colgroup>
+          <section aria-label="Volunteer opportunities" className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="admin-table-scroll min-h-0 flex-1 overflow-auto">
+              <table className="w-full min-w-[950px] table-fixed text-sm">
+                <colgroup><col className="w-[27%]" /><col className="w-[17%]" /><col className="w-[15%]" /><col className="w-[17%]" /><col className="w-[8%]" /><col className="w-[16%]" /></colgroup>
                 <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500"><tr>
                   <th scope="col" className="px-4 py-3 font-medium">Opportunity</th>
                   <th scope="col" className="px-4 py-3 font-medium">Category</th>
@@ -392,7 +392,7 @@ const VolunteerPage = () => {
                       <td className="break-words px-4 py-3 align-top text-gray-600">{opp.location || '—'}</td>
                       <td className="break-words px-4 py-3 align-top text-gray-600">{opp.commitment || '—'}</td>
                       <td className="px-4 py-3 align-top"><span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700">{opp.spots ?? '—'}</span></td>
-                      <td className="px-4 py-3 align-top"><div className="flex flex-col items-start gap-1"><button type="button" onClick={() => setSelectedOpportunity(opp)} className="rounded px-2 py-1 text-xs font-semibold text-primary-700 hover:bg-primary-50">View</button><button type="button" onClick={() => handleOpportunityApply(opp)} className="rounded bg-primary-700 px-2 py-1 text-xs font-semibold text-white hover:bg-primary-800">Apply</button></div></td>
+                      <td className="px-4 py-3 align-top"><div className="flex items-center gap-2 whitespace-nowrap"><button type="button" onClick={() => setSelectedOpportunity(opp)} className="rounded px-2 py-1 text-xs font-semibold text-primary-700 hover:bg-primary-50">View</button><button type="button" onClick={() => handleOpportunityApply(opp)} className="rounded bg-primary-700 px-2 py-1 text-xs font-semibold text-white hover:bg-primary-800">Apply</button></div></td>
                     </tr>
                   ))}
                   {opportunities.length === 0 && <tr><td colSpan={6} className="px-4 py-14 text-center text-sm text-gray-500">No opportunities available right now.</td></tr>}
@@ -405,42 +405,35 @@ const VolunteerPage = () => {
 
         {/* Application Form Tab */}
         {activeTab === 'apply' && (
-          <div ref={formSectionRef} className="mx-auto max-w-5xl scroll-mt-24">
-            <h2 className="mb-1 text-xl font-bold text-gray-900">Volunteer application</h2>
-            <p className="mb-4 text-sm text-gray-500">Complete the four steps below. Fields marked * are required.</p>
+          <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
             {formData.selectedOpportunityTitle && (
               <p className="mb-4 text-sm text-primary-700">
                 Applying for: <span className="font-semibold">{formData.selectedOpportunityTitle}</span>
               </p>
             )}
             {/* Progress indicator */}
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              {[1, 2, 3, 4].map((step) => (
-                <div key={step} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${formPage >= step ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                    {step}
-                  </div>
-                  {step < 4 && <div className={`w-8 h-0.5 ${formPage > step ? 'bg-primary-600' : 'bg-gray-200'}`} />}
-                </div>
-              ))}
-              <span className="ml-3 text-sm text-gray-500">
-                {formPage === 1 && 'Personal Information'}
-                {formPage === 2 && 'Interests & Motivation'}
-                {formPage === 3 && 'Your Journey'}
-                {formPage === 4 && 'Declaration'}
-              </span>
-            </div>
+            <ol aria-label="Application progress" className="mb-2 grid w-full shrink-0 grid-cols-4 gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm sm:gap-3">
+              {['Personal details', 'Interests', 'Your journey', 'Declaration'].map((label, index) => {
+                const step = index + 1;
+                return (
+                  <li key={label} aria-current={formPage === step ? 'step' : undefined} className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-center sm:flex-row sm:gap-2 sm:px-3 ${formPage === step ? 'bg-primary-50 text-primary-900' : 'text-gray-500'}`}>
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${formPage >= step ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-500'}`}>{step}</span>
+                    <span className="text-[11px] font-semibold leading-tight sm:text-sm">{label}</span>
+                  </li>
+                );
+              })}
+            </ol>
 
-            <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+            <form onSubmit={handleSubmit} style={{ paddingBottom: 2 }} className="volunteer-form flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
               {/* PAGE 1 — Personal Information */}
               {formPage === 1 && (
-                <div>
-                  <h3 className="mb-4 flex items-center text-base font-semibold">
+                <div className="flex h-full min-h-0 flex-col">
+                  <h3 className="mb-2 flex shrink-0 items-center border-b border-gray-100 pb-2 text-base font-semibold text-gray-900">
                     <FiUser className="mr-2 text-primary-600" />
                     Personal Information
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div ref={formScrollRef} className="admin-table-scroll grid min-h-0 flex-1 content-start gap-x-5 gap-y-4 overflow-y-auto overscroll-contain pr-2 sm:grid-cols-2 xl:grid-cols-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                       <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} required className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
@@ -449,32 +442,35 @@ const VolunteerPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                       <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone number <span className="font-normal text-gray-500">(include +91)</span> *</label>
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required placeholder="+91" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                    </div>
+                    <div className="xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
                       <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Please add +91) *</label>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required placeholder="+91" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                      <span id="volunteer-date-of-birth-label" className="mb-1 block text-sm font-medium text-gray-700">Date of Birth *</span>
+                      <VolunteerDatePicker labelledBy="volunteer-date-of-birth-label" value={formData.dateOfBirth} onChange={dateOfBirth => setFormData(previous => ({ ...previous, dateOfBirth }))} />
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
-                      <div className="flex flex-wrap gap-4">
+                    <div>
+                      <span id="volunteer-gender-label" className="mb-2 block text-sm font-medium text-gray-700">Gender *</span>
+                      <div role="group" aria-labelledby="volunteer-gender-label" className="inline-flex min-h-9 max-w-full flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1">
                         {['Male', 'Female', 'Prefer not to say'].map((g) => (
-                          <label key={g} className="flex items-center space-x-2">
-                            <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleInputChange} className="w-4 h-4 text-primary-600" />
-                            <span className="text-sm text-gray-700">{g}</span>
-                          </label>
+                          <button key={g} type="button" aria-pressed={formData.gender === g} onClick={() => setFormData(prev => ({ ...prev, gender: g }))} className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${formData.gender === g ? 'bg-primary-700 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}>
+                            {g}
+                          </button>
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-                      <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} required className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                    <div className="sm:col-span-2 xl:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name of Institution / College</label>
+                      <input type="text" name="institution" value={formData.institution} onChange={handleInputChange} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Educational Qualification *</label>
-                      <div className="flex flex-wrap gap-4">
+                      <div className="flex flex-wrap gap-x-5 gap-y-3 rounded-xl bg-gray-50 p-3 sm:p-4">
                         {['Diploma', 'Undergraduate', 'Postgraduate', 'Doctorate'].map((q) => (
                           <label key={q} className="flex items-center space-x-2">
                             <input type="radio" name="education" value={q} checked={formData.education === q} onChange={handleInputChange} className="w-4 h-4 text-primary-600" />
@@ -488,13 +484,9 @@ const VolunteerPage = () => {
                         </label>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name of Institution / College</label>
-                      <input type="text" name="institution" value={formData.institution} onChange={handleInputChange} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
-                    </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Occupation *</label>
-                      <div className="flex flex-wrap gap-4">
+                      <div className="flex flex-wrap gap-x-5 gap-y-3 rounded-xl bg-gray-50 p-3 sm:p-4">
                         {['Student', 'Working Professional', 'Entrepreneur'].map((o) => (
                           <label key={o} className="flex items-center space-x-2">
                             <input type="radio" name="occupation" value={o} checked={formData.occupation === o} onChange={handleInputChange} className="w-4 h-4 text-primary-600" />
@@ -509,7 +501,7 @@ const VolunteerPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-6 gap-3">
+                  <div className="mt-2 flex shrink-0 justify-end gap-3 border-t border-gray-100 pt-2">
                     <button type="button" onClick={() => handleNextPage(2)} className="btn-primary px-8">Next</button>
                   </div>
                 </div>
@@ -517,10 +509,10 @@ const VolunteerPage = () => {
 
               {/* PAGE 2 — Interests & Motivation */}
               {formPage === 2 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-6">Interests & Motivation</h3>
-                  <div className="space-y-4">
-                    <div>
+                <div className="flex h-full min-h-0 flex-col">
+                  <h3 className="mb-2 shrink-0 border-b border-gray-100 pb-2 text-base font-semibold">Interests & Motivation</h3>
+                  <div ref={formScrollRef} className="admin-table-scroll grid min-h-0 flex-1 content-start gap-4 overflow-y-auto overscroll-contain pr-2 xl:grid-cols-2">
+                    <div className="xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">How did you hear about this drive? *</label>
                       <div className="flex flex-wrap gap-4">
                         {['Social Media', 'Friends / Word of Mouth', 'NGO Member'].map((opt) => (
@@ -544,7 +536,7 @@ const VolunteerPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Have you previously participated in any volunteer activities? Say about that. *</label>
                       <textarea name="previousVolunteer" value={formData.previousVolunteer} onChange={handleInputChange} required rows="3" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"></textarea>
                     </div>
-                    <div>
+                    <div className="xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">In what capacity would you like to be involved? (You may select more than one) *</label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {capacityOptions.map((opt) => (
@@ -560,7 +552,7 @@ const VolunteerPage = () => {
                         </label>
                       </div>
                     </div>
-                    <div>
+                    <div className="xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">What are your key skills or areas of interest? (You may select more than one) *</label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {skillOptions.map((skill) => (
@@ -577,7 +569,7 @@ const VolunteerPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-between mt-6">
+                  <div className="mt-2 flex shrink-0 justify-between border-t border-gray-100 pt-2">
                     <button type="button" onClick={() => handlePreviousPage(1)} className="btn-secondary px-8">Previous</button>
                     <button type="button" onClick={() => handleNextPage(3)} className="btn-primary px-8">Next</button>
                   </div>
@@ -586,11 +578,11 @@ const VolunteerPage = () => {
 
               {/* PAGE 3 — Your Journey */}
               {formPage === 3 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Your Journey</h3>
-                  <p className="text-sm text-gray-500 mb-6 italic">To understand your journey, your fire, and your role in service</p>
-                  <div className="space-y-4">
-                    <div>
+                <div className="flex h-full min-h-0 flex-col">
+                  <h3 className="mb-1 shrink-0 text-base font-semibold">Your Journey</h3>
+                  <p className="mb-2 shrink-0 border-b border-gray-100 pb-2 text-xs italic text-gray-500">To understand your journey, your fire, and your role in service</p>
+                  <div ref={formScrollRef} className="admin-table-scroll grid min-h-0 flex-1 content-start gap-4 overflow-y-auto overscroll-contain pr-2 xl:grid-cols-2">
+                    <div className="xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">In one powerful line, tell us the purpose that drives you every day? *</label>
                       <textarea name="corePurpose" value={formData.corePurpose} onChange={handleInputChange} required rows="2" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"></textarea>
                     </div>
@@ -611,7 +603,7 @@ const VolunteerPage = () => {
                       <textarea name="dailyHabit" value={formData.dailyHabit} onChange={handleInputChange} required rows="3" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"></textarea>
                     </div>
                   </div>
-                  <div className="flex justify-between mt-6">
+                  <div className="mt-2 flex shrink-0 justify-between border-t border-gray-100 pt-2">
                     <button type="button" onClick={() => handlePreviousPage(2)} className="btn-secondary px-8">Previous</button>
                     <button type="button" onClick={() => handleNextPage(4)} className="btn-primary px-8">Next</button>
                   </div>
@@ -620,9 +612,9 @@ const VolunteerPage = () => {
 
               {/* PAGE 4 — Declaration */}
               {formPage === 4 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-6">Declaration</h3>
-                  <div className="space-y-4">
+                <div className="flex h-full min-h-0 flex-col">
+                  <h3 className="mb-2 shrink-0 border-b border-gray-100 pb-2 text-base font-semibold">Declaration</h3>
+                  <div ref={formScrollRef} className="admin-table-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-2">
                     <label className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
                       <input type="checkbox" name="agreeConduct" checked={formData.agreeConduct} onChange={handleInputChange} className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mt-1" />
                       <span className="text-sm text-gray-700">
@@ -636,7 +628,7 @@ const VolunteerPage = () => {
                       </span>
                     </label>
                   </div>
-                  <div className="flex justify-between mt-6">
+                  <div className="mt-2 flex shrink-0 justify-between border-t border-gray-100 pt-2">
                     <button type="button" onClick={() => handlePreviousPage(3)} className="btn-secondary px-8">Previous</button>
                     <button type="submit" disabled={loading || !formData.agreeConduct || !formData.agreeDeclaration} className="btn-primary px-8 disabled:opacity-50 disabled:cursor-not-allowed">
                       {loading ? 'Submitting...' : 'Submit'}
@@ -650,7 +642,7 @@ const VolunteerPage = () => {
 
         {/* Testimonials Tab */}
         {activeTab === 'testimonials' && (
-          <div>
+          <div className="admin-table-scroll h-full overflow-y-auto overscroll-contain">
             <h2 className="text-2xl font-bold mb-6">Volunteer Stories</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {volunteerTestimonials.map((testimonial) => (
@@ -674,9 +666,9 @@ const VolunteerPage = () => {
 
         {/* FAQ Tab */}
         {activeTab === 'faq' && (
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
-            <div className="space-y-4">
+          <div className="admin-table-scroll h-full overflow-y-auto overscroll-contain pr-2">
+            <h2 className="mb-3 text-xl font-bold">Frequently Asked Questions</h2>
+            <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {[
                 {
                   q: "What is the minimum time commitment?",
@@ -703,9 +695,9 @@ const VolunteerPage = () => {
                   a: "After submitting your application, we'll contact you within 3-5 business days for an interview and orientation."
                 }
               ].map((faq, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-lg p-6">
-                  <h3 className="font-semibold text-lg mb-2 text-primary-600">{faq.q}</h3>
-                  <p className="text-gray-700">{faq.a}</p>
+                <div key={index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="mb-2 text-base font-semibold text-primary-700">{faq.q}</h3>
+                  <p className="text-sm leading-6 text-gray-700">{faq.a}</p>
                 </div>
               ))}
             </div>

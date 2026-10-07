@@ -48,10 +48,10 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
-  const isScrollablePage = ['/contact', '/volunteer'].includes(location.pathname);
+  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events', '/volunteer'].includes(location.pathname);
+  const isScrollablePage = ['/contact'].includes(location.pathname);
   const isViewportPage = isFullHeightPage || isScrollablePage;
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events', '/volunteer'].includes(location.pathname);
 
   return (
     <div className={isViewportPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>

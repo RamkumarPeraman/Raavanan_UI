@@ -128,6 +128,122 @@
     min-height: 32px;
   }
 
+  .volunteer-form input:not([type='checkbox']):not([type='radio']),
+  .volunteer-form textarea {
+    @apply min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm leading-5 text-slate-800 shadow-sm;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .volunteer-form input:not([type='checkbox']):not([type='radio']) {
+    height: 36px;
+  }
+
+  .volunteer-form textarea {
+    @apply resize-none py-2;
+    min-height: 80px;
+    max-height: 80px;
+    height: 80px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(27, 115, 111, 0.35) transparent;
+  }
+
+  .volunteer-form input:not([type='checkbox']):not([type='radio']):hover,
+  .volunteer-form textarea:hover {
+    @apply border-slate-300 bg-white;
+  }
+
+  .volunteer-form input:not([type='checkbox']):not([type='radio']):focus,
+  .volunteer-form textarea:focus {
+    @apply border-primary-500 bg-white outline-none;
+    box-shadow: 0 0 0 3px rgba(27, 115, 111, 0.12);
+  }
+
+  .volunteer-form input:disabled {
+    @apply cursor-not-allowed bg-slate-100 text-slate-400;
+  }
+
+  .volunteer-form .admin-table-scroll::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  .volunteer-form .btn-primary,
+  .volunteer-form .btn-secondary {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 18px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .volunteer-date-popover .react-calendar {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    color: #1e293b;
+  }
+
+  .volunteer-date-popover .react-calendar__navigation {
+    height: 38px;
+    margin-bottom: 8px;
+  }
+
+  .volunteer-date-popover .react-calendar__navigation button {
+    min-width: 32px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .volunteer-date-popover .react-calendar__navigation button:enabled:hover,
+  .volunteer-date-popover .react-calendar__navigation button:enabled:focus {
+    background: #eaf6f4;
+  }
+
+  .volunteer-date-popover .react-calendar__month-view__weekdays {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .volunteer-date-popover .react-calendar__month-view__weekdays abbr {
+    text-decoration: none;
+  }
+
+  .volunteer-date-popover .react-calendar__tile {
+    height: 36px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .volunteer-date-popover .react-calendar__year-view .react-calendar__tile,
+  .volunteer-date-popover .react-calendar__decade-view .react-calendar__tile,
+  .volunteer-date-popover .react-calendar__century-view .react-calendar__tile {
+    height: 48px;
+  }
+
+  .volunteer-date-popover .react-calendar__tile:enabled:hover,
+  .volunteer-date-popover .react-calendar__tile:enabled:focus {
+    background: #eaf6f4;
+    color: #0d5753;
+  }
+
+  .volunteer-date-popover .react-calendar__tile--now {
+    background: #f1f5f9;
+  }
+
+  .volunteer-date-popover .react-calendar__tile--active,
+  .volunteer-date-popover .react-calendar__tile--active:enabled:hover,
+  .volunteer-date-popover .react-calendar__tile--active:enabled:focus {
+    background: #1b736f;
+    color: white;
+  }
+
+  .volunteer-date-popover .react-calendar__tile:disabled {
+    background: transparent;
+    color: #cbd5e1;
+  }
+
   .admin-table-scroll {
     scrollbar-width: thin;
     scrollbar-color: rgba(27, 115, 111, 0.35) transparent;
