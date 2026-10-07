@@ -455,11 +455,11 @@ const VolunteerPage = () => {
                       <VolunteerDatePicker labelledBy="volunteer-date-of-birth-label" value={formData.dateOfBirth} onChange={dateOfBirth => setFormData(previous => ({ ...previous, dateOfBirth }))} />
                     </div>
                     <div>
-                      <span id="volunteer-gender-label" className="mb-2 block text-sm font-medium text-gray-700">Gender *</span>
-                      <div role="group" aria-labelledby="volunteer-gender-label" className="inline-flex min-h-9 max-w-full flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1">
-                        {['Male', 'Female', 'Prefer not to say'].map((g) => (
-                          <button key={g} type="button" aria-pressed={formData.gender === g} onClick={() => setFormData(prev => ({ ...prev, gender: g }))} className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${formData.gender === g ? 'bg-primary-700 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}>
-                            {g}
+                      <span id="volunteer-gender-label" className="mb-1 block text-sm font-medium text-gray-700">Gender *</span>
+                      <div role="group" aria-labelledby="volunteer-gender-label" className="grid grid-cols-3 gap-2">
+                        {['Male', 'Female', 'Prefer not to say'].map(gender => (
+                          <button key={gender} type="button" aria-pressed={formData.gender === gender} onClick={() => setFormData(previous => ({ ...previous, gender }))} className={`min-h-10 rounded-lg border px-2 py-1 text-center text-xs font-semibold leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:text-sm ${formData.gender === gender ? 'border-primary-600 bg-primary-50 text-primary-800 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-primary-300 hover:bg-slate-50'}`}>
+                            {gender}
                           </button>
                         ))}
                       </div>
