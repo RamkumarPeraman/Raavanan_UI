@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FiCheck, FiChevronDown } from 'react-icons/fi';
 
-const CommonSelect = ({ id, name, value, onChange, options, placeholder = 'Select an option', label, disabled = false }) => {
+const CommonSelect = ({ id, name, value, onChange, options, placeholder = 'Select an option', label, disabled = false, className = '', menuClassName = '' }) => {
   const menuId = useId();
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
@@ -83,14 +83,14 @@ const CommonSelect = ({ id, name, value, onChange, options, placeholder = 'Selec
         aria-activedescendant={position && items[active] ? `${menuId}-${active}` : undefined}
         disabled={disabled} onKeyDown={handleKeyDown} onBlur={() => setPosition(null)}
         onClick={() => position ? setPosition(null) : openMenu()}
-        className="flex h-[34px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-white focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary-600/10 disabled:cursor-not-allowed disabled:opacity-50">
+        className={`flex h-[34px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-white focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary-600/10 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
         <span className={`truncate ${selected < 0 ? 'text-slate-400' : ''}`}>{items[selected]?.label || placeholder}</span>
         <FiChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform ${position ? 'rotate-180' : ''}`} />
       </button>
       {position && createPortal(
         <div ref={menuRef} id={menuId} role="listbox" aria-label={label || placeholder}
           style={position} onMouseDown={(event) => event.preventDefault()}
-          className="admin-table-scroll fixed z-[60] overflow-y-auto overscroll-contain rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+          className={`admin-table-scroll fixed z-[60] overflow-y-auto overscroll-contain rounded-md border border-slate-200 bg-white p-1 shadow-lg ${menuClassName}`}>
           {items.map((item, index) => (
             <div key={item.value} id={`${menuId}-${index}`} role="option" aria-selected={item.value === value}
               onMouseEnter={() => setActive(index)} onClick={() => choose(index)}

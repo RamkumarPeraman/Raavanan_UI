@@ -49,16 +49,16 @@ function ScrollToTop() {
 function AppLayout() {
   const location = useLocation();
   const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/projects', '/events', '/volunteer'].includes(location.pathname);
-  const isScrollablePage = ['/contact'].includes(location.pathname);
+  const isScrollablePage = ['/contact', '/donate'].includes(location.pathname);
   const isViewportPage = isFullHeightPage || isScrollablePage;
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events', '/volunteer'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/projects', '/events', '/volunteer', '/donate'].includes(location.pathname);
 
   return (
     <div className={isViewportPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
       <div className={isViewportPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main key={location.pathname} className={location.pathname === '/volunteer' ? 'mt-16 min-h-0 flex-1 overflow-hidden md:mt-[4.5rem]' : isScrollablePage ? 'mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]' : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+        <main key={location.pathname} className={location.pathname === '/volunteer' ? 'mt-16 min-h-0 flex-1 overflow-hidden md:mt-[4.5rem]' : isScrollablePage ? `${location.pathname === '/donate' ? 'admin-table-scroll ' : ''}mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]` : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}
