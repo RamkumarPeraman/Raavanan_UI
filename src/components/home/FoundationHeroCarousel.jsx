@@ -149,7 +149,7 @@ const FoundationHeroCarousel = () => {
   const currentSlide = heroSlides[activeSlide] || null;
 
   return (
-    <section className="bg-[#fffaf1] pt-16 text-ink-950 md:pt-18">
+    <section className="bg-[#fffaf1] text-ink-950">
       {currentSlide && (
         <div className="relative min-h-[450px] w-full overflow-hidden md:min-h-[520px]">
           <HeroSlideImage

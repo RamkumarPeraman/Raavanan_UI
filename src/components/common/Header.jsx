@@ -162,7 +162,7 @@ const Header = () => {
     }`}>
       <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-[#14565a]/55 to-transparent" />
       <div className="container-custom">
-        <div className="relative flex h-16 items-center gap-3 md:h-18">
+        <div className="relative flex h-16 items-center gap-3 md:h-[4.5rem]">
           <button
             ref={mobileMenuButtonRef}
             type="button"
