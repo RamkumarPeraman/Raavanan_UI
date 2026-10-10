@@ -185,7 +185,7 @@ const ProfilePageApi = () => {
 
   if (loading) {
     return (
-      <div className="pt-24 min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-full items-center justify-center bg-gray-50">
         <CommonLoader />
       </div>
     );
@@ -193,7 +193,7 @@ const ProfilePageApi = () => {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 pt-16 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center bg-gray-50 px-4 text-center">
         <h1 className="text-xl font-semibold text-gray-900">Could not load your profile</h1>
         <p className="mt-2 text-sm text-gray-600">The server did not respond. Please try again.</p>
         <button type="button" onClick={() => { setLoading(true); setLoadAttempt(attempt => attempt + 1); }} className="mt-5 rounded-lg bg-primary-700 px-5 py-2.5 font-semibold text-white hover:bg-primary-800">Retry</button>
@@ -202,7 +202,7 @@ const ProfilePageApi = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7f6] pb-16 pt-24">
+    <div className="min-h-full bg-[#f4f7f6] pb-16 pt-8">
       <div className="container-custom mx-auto max-w-[1500px] space-y-6">
         <section className="relative overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_22px_60px_-38px_rgba(20,26,32,0.45)]">
           <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-primary-700 via-primary-500 to-accent-500" />

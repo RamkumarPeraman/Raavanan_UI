@@ -244,25 +244,30 @@
     color: #cbd5e1;
   }
 
+  html,
   .admin-table-scroll {
     scrollbar-width: thin;
     scrollbar-color: rgba(27, 115, 111, 0.35) transparent;
   }
 
+  html::-webkit-scrollbar,
   .admin-table-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
+  html::-webkit-scrollbar-track,
   .admin-table-scroll::-webkit-scrollbar-track {
     background: transparent;
   }
 
+  html::-webkit-scrollbar-thumb,
   .admin-table-scroll::-webkit-scrollbar-thumb {
     background: rgba(27, 115, 111, 0.35);
     border-radius: 9999px;
   }
 
+  html::-webkit-scrollbar-thumb:hover,
   .admin-table-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(27, 115, 111, 0.6);
   }
