@@ -29,11 +29,22 @@ const DonationPage = () => {
   const [screenshotName, setScreenshotName] = useState('');
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [qrLoad, setQrLoad] = useState({ source: '', error: false, retries: 0 });
+  const qrImageError = qrLoad.source === qrImage && qrLoad.error;
+  const qrRetryCount = qrLoad.source === qrImage ? qrLoad.retries : 0;
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (settingsStatus === 'idle' || settingsStatus === 'failed') void dispatch(ensurePaymentSettings());
+    if (settingsStatus === 'idle') void dispatch(ensurePaymentSettings());
   }, [dispatch, settingsStatus]);
+
+  useEffect(() => {
+    if (!qrImageError || qrRetryCount >= 2) return undefined;
+    const timer = setTimeout(() => {
+      setQrLoad({ source: qrImage, error: false, retries: qrRetryCount + 1 });
+    }, 2000 * (qrRetryCount + 1));
+    return () => clearTimeout(timer);
+  }, [qrImage, qrImageError, qrRetryCount]);
 
   const handleInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -54,12 +65,20 @@ const DonationPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleDownloadQr = () => {
+  const handleDownloadQr = async () => {
     if (!qrImage) return;
-    const link = document.createElement('a');
-    link.href = qrImage;
-    link.download = 'donation-qr.png';
-    link.click();
+    try {
+      const response = await fetch(qrImage);
+      if (!response.ok) throw new Error('QR image unavailable');
+      const imageUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'donation-qr.png';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+    } catch {
+      toast.error('Could not download the QR code. Please try again.');
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -188,9 +207,17 @@ const DonationPage = () => {
             <div className="donation-qr">
               <h3>Scan & pay</h3>
               <p>Pay by UPI or bank transfer, then share your receipt.</p>
-              {settingsLoaded && qrImage ? <img src={qrImage} alt="Scan this QR code to donate" /> : <div className="donation-qr-placeholder">{settingsLoaded || settingsStatus === 'failed' ? 'QR code unavailable. Please use bank transfer below.' : 'Loading QR code…'}</div>}
+              {qrImage && !qrImageError
+                ? <img src={qrRetryCount ? `${qrImage}${qrImage.includes('?') ? '&' : '?'}retry=${qrRetryCount}` : qrImage} alt="Scan this QR code to donate" onError={() => setQrLoad({ source: qrImage, error: true, retries: qrRetryCount })} />
+                : <div className="donation-qr-placeholder">{(qrImage && qrRetryCount < 2) || (!qrImage && !settingsLoaded && settingsStatus !== 'failed') ? 'Loading QR code…' : 'QR code unavailable. Please use bank transfer below.'}</div>}
               <span className="donation-upi-apps">Google Pay <i /> PhonePe <i /> Paytm</span>
-              {qrImage && <button type="button" onClick={handleDownloadQr} className="donation-download"><FiDownload aria-hidden="true" /> Download QR</button>}
+              {qrImage && !qrImageError && <button type="button" onClick={handleDownloadQr} className="donation-download"><FiDownload aria-hidden="true" /> Download QR</button>}
+              {(settingsStatus === 'failed' || (qrImageError && qrRetryCount >= 2)) && (
+                <button type="button" className="donation-download" onClick={() => {
+                  if (settingsStatus === 'failed') void dispatch(ensurePaymentSettings());
+                  setQrLoad({ source: qrImage, error: false, retries: qrRetryCount + 1 });
+                }}>Retry QR code</button>
+              )}
             </div>
             <div className="donation-bank-heading"><span>or bank transfer</span></div>
             <dl className="donation-bank-details">

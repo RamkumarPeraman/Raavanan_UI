@@ -272,22 +272,23 @@ const apiService = {
   getAdminSettings: async () => {
     try {
       const response = await api.get('/admin-settings');
+      const qrImage = response.data?.data?.donationQrImage;
+      if (qrImage?.startsWith('/')) {
+        response.data.data.donationQrImage = `${config.api.baseURL}${qrImage}`;
+      }
       return response.data;
     } catch (error) {
-      return {
-        success: true,
-        data: {
-          donationQrImage: '',
-          bankDetails: defaultBankDetails,
-          heroNewsCarousel: [],
-        },
-      };
+      throwApiError(error);
     }
   },
 
   updateAdminSettings: async (settingsData) => {
     try {
       const response = await api.put('/admin-settings', settingsData);
+      const qrImage = response.data?.data?.donationQrImage;
+      if (qrImage?.startsWith('/')) {
+        response.data.data.donationQrImage = `${config.api.baseURL}${qrImage}`;
+      }
       return response.data;
     } catch (error) {
       throwApiError(error);

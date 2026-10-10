@@ -395,6 +395,7 @@ const AdminDashboardPage = () => {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [heroSaving, setHeroSaving] = useState(false);
   const [qrImage, setQrImage] = useState('');
+  const [qrImageChanged, setQrImageChanged] = useState(false);
   const [bankDetails, setBankDetails] = useState({ ...defaultBankDetails });
   const [heroCarouselSlides, setHeroCarouselSlides] = useState([]);
   const [previewSlideId, setPreviewSlideId] = useState(null);
@@ -471,6 +472,7 @@ const AdminDashboardPage = () => {
       const res = await apiService.getAdminSettings();
       if (res?.data) {
         setQrImage(res.data.donationQrImage || '');
+        setQrImageChanged(false);
         setBankDetails({ ...defaultBankDetails, ...res.data.bankDetails });
         setHeroCarouselSlides(normalizeHeroSlides(res.data.heroNewsCarousel));
       }
@@ -484,16 +486,30 @@ const AdminDashboardPage = () => {
   const handleQrFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
+      toast.error('Upload a PNG, JPG, WebP or GIF QR image');
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) { toast.error('QR image must be under 5MB'); return; }
     const reader = new FileReader();
-    reader.onload = (ev) => setQrImage(ev.target.result);
+    reader.onload = (ev) => {
+      setQrImage(ev.target.result);
+      setQrImageChanged(true);
+    };
     reader.readAsDataURL(file);
   };
 
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      await apiService.updateAdminSettings({ donationQrImage: qrImage, bankDetails });
+      const response = await apiService.updateAdminSettings({
+        bankDetails,
+        ...(qrImageChanged ? { donationQrImage: qrImage } : {}),
+      });
+      if (response?.data) {
+        setQrImage(response.data.donationQrImage || '');
+        setQrImageChanged(false);
+      }
       toast.success('Payment settings saved successfully!');
     } catch (e) {
       toast.error(e.message || 'Failed to save settings');
@@ -1090,7 +1106,7 @@ const AdminDashboardPage = () => {
               loading={settingsLoading}
               qrImage={qrImage}
               onQrChange={handleQrFileChange}
-              onQrRemove={() => setQrImage('')}
+              onQrRemove={() => { setQrImage(''); setQrImageChanged(true); }}
               bankDetails={bankDetails}
               onBankChange={(key, value) => setBankDetails((previous) => ({ ...previous, [key]: value }))}
             />

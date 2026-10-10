@@ -51,7 +51,7 @@ const PaymentSettingsPanel = ({ loading, qrImage, onQrChange, onQrRemove, bankDe
               </button>
             )}
           </div>
-          <input ref={qrFileRef} type="file" accept="image/*" onChange={onQrChange} className="hidden" />
+          <input ref={qrFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onQrChange} className="hidden" />
         </section>
 
         <section className="flex min-h-[300px] flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
