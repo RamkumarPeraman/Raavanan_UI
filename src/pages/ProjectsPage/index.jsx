@@ -75,7 +75,7 @@ const ProjectsPage = () => {
   const additionalDetails = selectedProject?.longDescription?.trim();
 
   return <div className="min-h-full bg-[#faf8f3] text-ink-950">
-    <section className="container-custom pb-20 pt-4 sm:pt-5" aria-labelledby="project-list-title">
+    <section className="container-custom pb-20 pt-2" aria-labelledby="project-list-title">
       <h1 id="project-list-title" className="sr-only">Projects</h1>
       <div className="mb-4 flex min-w-0 flex-col gap-3 border-b border-[#e4ddd2] pb-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex max-w-full min-w-0 gap-2 overflow-x-auto" role="group" aria-label="Project views">
