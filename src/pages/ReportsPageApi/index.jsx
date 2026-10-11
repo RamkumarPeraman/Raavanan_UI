@@ -1,9 +1,9 @@
 import CommonLoader from '../../components/common/CommonLoader';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  FiDownload, FiEye, FiCalendar, FiFileText, FiBarChart2,
-  FiSearch, FiChevronLeft, FiChevronRight,
-  FiAward, FiHeart, FiDollarSign, FiCheckCircle, FiStar
+  FiArrowRight, FiDownload, FiCalendar, FiFileText, FiBarChart2,
+  FiSearch, FiFilter, FiChevronLeft, FiChevronRight,
+  FiAward, FiHeart, FiDollarSign, FiCheckCircle
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import ReportPopup from '../../components/common/ReportPopup';
@@ -29,6 +29,7 @@ const ReportsPageApi = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -132,40 +133,27 @@ const ReportsPageApi = () => {
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'annual':
-        return 'bg-purple-100 text-purple-800';
-      case 'quarterly':
-        return 'bg-blue-100 text-blue-800';
-      case 'impact':
-        return 'bg-red-100 text-red-800';
-      case 'financial':
-        return 'bg-green-100 text-green-800';
-      case 'project':
-        return 'bg-orange-100 text-orange-800';
-      case 'publication':
-        return 'bg-slate-100 text-slate-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString('en-US', {
+    dateString ? new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
+    }) : 'Date unavailable';
 
-  const totalDownloads = reports.reduce((sum, report) => sum + Number(report.downloads || 0), 0);
-  const totalViews = reports.reduce((sum, report) => sum + Number(report.views || 0), 0);
+  const tabs = [
+    ['all', 'All Reports', reports.length],
+    ['featured', 'Featured', reports.filter((report) => report.featured).length],
+    ['annual', 'Annual Reports', reports.filter((report) => report.type === 'annual').length],
+    ['impact', 'Impact Reports', reports.filter((report) => report.type === 'impact').length],
+    ['financial', 'Financial Reports', reports.filter((report) => report.type === 'financial').length],
+    ['publications', 'Publications', reports.filter((report) => report.type === 'publication' || report.category === 'Publication').length],
+  ];
   const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
   const currentReports = filteredReports.slice((currentPage - 1) * reportsPerPage, currentPage * reportsPerPage);
 
   if (loading) {
     return (
-      <div className="pt-20 pb-16 min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#faf8f3] pt-3">
         <div className="container-custom">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -179,185 +167,106 @@ const ReportsPageApi = () => {
   }
 
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#faf8f3] pt-3 pb-10 text-ink-950">
       <div className="container-custom">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Reports & Publications</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Access our annual reports, impact assessments, financial statements,
-            and publications to understand our work and transparency.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <FiFileText className="w-8 h-8 text-primary-600 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{reports.length}</div>
-            <div className="text-sm text-gray-600">Total Items</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <FiDownload className="w-8 h-8 text-primary-600 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{totalDownloads.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Downloads</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <FiEye className="w-8 h-8 text-primary-600 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{totalViews.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Views</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <FiStar className="w-8 h-8 text-primary-600 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{reports.filter((report) => report.featured).length}</div>
-            <div className="text-sm text-gray-600">Featured</div>
-          </div>
-        </div>
-
-        <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
-          {[
-            ['all', 'All Reports'],
-            ['featured', 'Featured'],
-            ['annual', 'Annual Reports'],
-            ['impact', 'Impact Reports'],
-            ['financial', 'Financial Reports'],
-            ['publications', 'Publications'],
-          ].map(([tabId, label]) => (
+        <h1 className="sr-only">Reports and Publications</h1>
+        <div className="relative flex min-w-0 flex-col gap-4 border-b border-[#e4ddd2] pb-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label="Report views">
+          {tabs.map(([tabId, label, count]) => (
             <button
               key={tabId}
+              type="button"
+              aria-pressed={activeTab === tabId}
               onClick={() => setActiveTab(tabId)}
-              className={`px-6 py-3 font-medium whitespace-nowrap ${
+              className={`inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-sm font-semibold transition ${
                 activeTab === tabId
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-primary-700 bg-primary-800 text-white'
+                  : 'border-[#e4ddd2] bg-white text-ink-700 hover:border-primary-400 hover:text-primary-800'
               }`}
             >
               {label}
+              <span className={`text-xs ${activeTab === tabId ? 'text-white/80' : 'text-ink-500'}`}>{count}</span>
             </button>
           ))}
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+          <div className="flex min-w-0 gap-3 xl:w-[min(35vw,560px)] xl:shrink-0">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Search reports</span>
+              <FiSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-500" />
               <input
                 type="text"
-                placeholder="Search reports..."
+                placeholder="Search reports by title or topic"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                className="h-11 w-full rounded-md border border-[#ded8cd] bg-white pl-11 pr-4 text-sm outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-500/15"
               />
-            </div>
-
-            <select
-              value={selectedYear}
-              onChange={(event) => setSelectedYear(event.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-            >
-              {years.map((year) => (
-                <option key={year} value={year === 'All' ? 'all' : year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedType}
-              onChange={(event) => setSelectedType(event.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
-            >
-              {reportTypes.map((type) => (
-                <option key={type} value={type === 'All' ? 'all' : type}>
-                  {type}
-                </option>
-              ))}
-            </select>
+            </label>
+            <button
+              type="button"
+              aria-expanded={showFilters}
+              aria-controls="report-filter-panel"
+              onClick={() => setShowFilters((open) => !open)}
+              className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md border px-5 text-sm font-semibold transition hover:border-primary-600 ${selectedYear !== 'all' || selectedType !== 'all' ? 'border-primary-700 bg-primary-50 text-primary-800' : 'border-[#ded8cd] bg-white text-ink-700'}`}
+            ><FiFilter aria-hidden="true" />Filters</button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {showFilters && <div id="report-filter-panel" className="relative z-10 mt-2 flex flex-wrap items-end gap-3 rounded-md border border-[#ded8cd] bg-white p-4 shadow-sm">
+          <label className="min-w-[150px] flex-1 text-xs font-medium text-ink-500">Year
+            <select value={selectedYear} onChange={(event) => setSelectedYear(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-[#ded8cd] bg-white px-3 text-sm text-ink-900 outline-none focus:border-primary-600">
+              {years.map((year) => <option key={year} value={year === 'All' ? 'all' : year}>{year === 'All' ? 'All years' : year}</option>)}
+            </select>
+          </label>
+          <label className="min-w-[170px] flex-1 text-xs font-medium text-ink-500">Type
+            <select value={selectedType} onChange={(event) => setSelectedType(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-[#ded8cd] bg-white px-3 text-sm text-ink-900 outline-none focus:border-primary-600">
+              {reportTypes.map((type) => <option key={type} value={type === 'All' ? 'all' : type}>{type === 'All' ? 'All types' : type}</option>)}
+            </select>
+          </label>
+          <button type="button" onClick={() => { setSelectedYear('all'); setSelectedType('all'); }} className="h-10 rounded-md px-3 text-sm font-semibold text-primary-800 hover:bg-primary-50">Clear</button>
+          <button type="button" onClick={() => setShowFilters(false)} className="h-10 rounded-md bg-primary-800 px-4 text-sm font-semibold text-white hover:bg-primary-700">Done</button>
+        </div>}
+
+        <p className="mt-6 mb-4 text-sm text-ink-500">{filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'}</p>
+
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {currentReports.map((report) => (
-            <div key={report.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-40 bg-gradient-to-br from-primary-600 to-primary-800 relative">
-                {report.thumbnail ? (
-                  <img src={report.thumbnail} alt={report.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">{getTypeIcon(report.type)}</div>
-                )}
-
-                {report.featured && (
-                  <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-semibold flex items-center">
-                    <FiStar className="mr-1" size={12} />
-                    Featured
-                  </div>
-                )}
+            <article key={report.id} className="flex min-w-0 flex-col overflow-hidden rounded-md border border-[#e4ddd2] bg-white shadow-[0_14px_36px_-32px_rgba(9,42,43,0.45)] transition hover:border-primary-300 hover:shadow-md">
+              <div className="relative flex h-40 w-full items-center justify-center bg-gradient-to-br from-[#dcece7] via-[#f2f4e9] to-[#fff0db] text-4xl text-primary-800">
+                {getTypeIcon(report.type)}
+                {report.year && <span className="absolute bottom-3 left-3 rounded-md bg-white/95 px-3 py-1.5 text-xs font-bold text-primary-900 shadow-sm">{report.year}</span>}
               </div>
 
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeColor(report.type)}`}>
-                    {report.category || report.type}
-                  </span>
-                  <span className="text-xs text-gray-500 flex items-center">
-                    <FiCalendar className="mr-1" size={12} />
-                    {formatDate(report.publishedDate)}
-                  </span>
+              <div className="flex-1 p-5">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary-700">
+                  <span>{report.category || report.type || 'Report'}</span>
+                  {report.featured && <><span className="h-1 w-1 rounded-full bg-stone-400" aria-hidden="true" /><span className="text-ink-500">Featured</span></>}
                 </div>
-
-                <h3 className="text-lg font-bold mb-2">{report.title}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{report.summary || report.description}</p>
-
-                {report.metrics && Object.keys(report.metrics).length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    {Object.entries(report.metrics).slice(0, 3).map(([key, value]) => (
-                      <div key={key} className="text-center">
-                        <div className="text-xs font-semibold text-primary-600">{value}</div>
-                        <div className="text-xs text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span className="flex items-center">
-                    <FiFileText className="mr-1" size={12} />
-                    {report.pages || 0} pages
-                  </span>
-                  <span className="flex items-center">
-                    <FiDownload className="mr-1" size={12} />
-                    {report.downloads || 0} downloads
-                  </span>
-                  <span className="flex items-center">
-                    <FiEye className="mr-1" size={12} />
-                    {report.views || 0} views
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewReport(report)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium flex items-center justify-center"
-                  >
-                    <FiEye className="mr-2" size={16} />
-                    Preview
-                  </button>
-                  <button
-                    onClick={() => handleDownloadReport(report)}
-                    className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium flex items-center justify-center"
-                  >
-                    <FiDownload className="mr-2" size={16} />
-                    Download
-                  </button>
+                <h3 className="mt-3 break-words text-xl font-bold leading-snug text-ink-950 [overflow-wrap:anywhere]">{report.title}</h3>
+                <p className="mt-2 line-clamp-2 min-h-12 break-words text-sm leading-6 text-ink-600 [overflow-wrap:anywhere]">{report.summary || report.description || 'Explore this document for more details.'}</p>
+                <div className="mt-4 space-y-2 text-sm text-ink-600">
+                  <div className="flex items-center gap-2"><FiCalendar aria-hidden="true" /><span>{formatDate(report.publishedDate)}</span></div>
+                  {report.pages && <div className="flex items-center gap-2"><FiFileText aria-hidden="true" /><span>{report.pages} pages</span></div>}
+                  <div className="flex items-center gap-2"><FiDownload aria-hidden="true" /><span>{report.downloads || 0} downloads</span></div>
                 </div>
               </div>
-            </div>
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[#eee9e0] px-5 py-3">
+                <button type="button" onClick={() => handleViewReport(report)} className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-800 hover:text-primary-600">
+                  View details <FiArrowRight aria-hidden="true" />
+                </button>
+                <button type="button" onClick={() => handleDownloadReport(report)} className="inline-flex items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
+                  <FiDownload aria-hidden="true" /> Open file
+                </button>
+              </div>
+            </article>
           ))}
         </div>
 
         {filteredReports.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-lg shadow mt-6">
-            <FiFileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No reports found</h3>
-            <p className="text-gray-500">Try adjusting your filters or search term</p>
+          <div className="rounded-md border border-[#e4ddd2] bg-white px-6 py-14 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-primary-50 text-primary-800"><FiFileText size={25} aria-hidden="true" /></div>
+            <h2 className="mt-4 text-xl font-bold">No reports found</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-600">Try another search, view, or filter.</p>
+            {(searchTerm || activeTab !== 'all' || selectedYear !== 'all' || selectedType !== 'all') && <button type="button" onClick={() => { setSearchTerm(''); setActiveTab('all'); setSelectedYear('all'); setSelectedType('all'); }} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Clear filters</button>}
           </div>
         )}
 
