@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { toast } from 'react-toastify';
-import { FiBookmark, FiCalendar, FiCheckCircle, FiDownload, FiEye, FiFilter, FiSearch, FiShare2, FiUsers, FiX } from 'react-icons/fi';
+import { FiArrowRight, FiBookmark, FiCalendar, FiCheckCircle, FiClock, FiDownload, FiFilter, FiMapPin, FiSearch, FiShare2, FiUsers, FiX } from 'react-icons/fi';
 import CommonLoader from '../../components/common/CommonLoader';
 import CommonPopup from '../../components/common/CommonPopup';
 import CommonSelect from '../../components/common/CommonSelect';
+import FoundationFooter from '../../components/common/FoundationFooter';
 import Pagination from '../../components/common/Pagination';
 import apiService from '../../services/api';
 
@@ -31,6 +32,14 @@ const attendeeLabel = event => String(event.registered || 0) + (event.capacity ?
 const isFull = event => Number(event.capacity) > 0 && Number(event.registered || 0) >= Number(event.capacity);
 const escapeIcs = value => String(value || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
+const EventCover = ({ event, className = '', showDate = false }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  return <div className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#dcece7] via-[#f2f4e9] to-[#fff0db] text-primary-800 ${className}`}>
+    {event.image && !imageFailed ? <img src={event.image} alt="" onError={() => setImageFailed(true)} className="h-full w-full object-cover" /> : <FiCalendar aria-hidden="true" className="h-10 w-10" />}
+    {showDate && <span className="absolute bottom-3 left-3 rounded-md bg-white/95 px-3 py-1.5 text-xs font-bold text-primary-900 shadow-sm">{eventDay(event.date) ? dateLabel(event.date) : 'Date TBA'}</span>}
+  </div>;
+};
+
 const EventsPageApi = () => {
   const [events, setEvents] = useState([]);
   const [registeredIds, setRegisteredIds] = useState([]);
@@ -43,7 +52,7 @@ const EventsPageApi = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [registeringId, setRegisteringId] = useState(null);
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
@@ -189,55 +198,50 @@ const EventsPageApi = () => {
   };
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-3 overflow-hidden bg-gray-50 px-[5px] pt-20">
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <div className="flex min-w-0 max-w-full gap-1 overflow-x-auto">
-          {tabs.map(tab => <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} onClick={() => { setActiveTab(tab.id); setPage(1); }} className={'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-xs font-medium ' + (activeTab === tab.id ? 'border-primary-300 bg-primary-50 text-primary-800 ring-1 ring-primary-500' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100')}>{tab.label}<span>{tab.count}</span></button>)}
-        </div>
-        <div className="relative w-full sm:ml-auto sm:w-48"><FiSearch className="absolute left-2.5 top-2.5 text-gray-400" /><input aria-label="Search events" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search events…" className="h-[34px] w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs focus:border-primary-500 focus:outline-none" /></div>
-        <button ref={filterButtonRef} type="button" aria-expanded={Boolean(filterPosition)} aria-controls="event-filter-panel" onClick={openFilters} className={'inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium hover:bg-primary-50 ' + (category !== 'all' || dateFilter ? 'border-primary-400 bg-primary-50 text-primary-800' : 'border-gray-200 bg-white text-primary-700')}><FiFilter />Filters</button>
-        <Link to="/contact" className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-100">Organize an event</Link>
-      </div>
-
-      {filterPosition && createPortal(
-        <section ref={filterPanelRef} id="event-filter-panel" role="dialog" aria-label="Event filters" tabIndex={-1} style={filterPosition} className="fixed z-50 w-80 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl outline-none">
-          <div className="flex items-center justify-between px-4 pt-3 text-sm font-semibold text-slate-800">Filters<button type="button" aria-label="Close filters" onClick={() => setFilterPosition(null)} className="rounded p-1 text-slate-500 hover:bg-slate-100"><FiX /></button></div>
-          <div className="space-y-4 p-4">
-            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Category</label><CommonSelect label="Category" value={draftCategory} onChange={setDraftCategory} options={[{ value: 'all', label: 'All Categories' }, ...categories.map(value => ({ value, label: value }))]} /></div>
-            <div><label className="mb-1.5 block text-xs font-medium text-slate-500">Event date</label><Calendar value={draftDate} onChange={setDraftDate} tileClassName={({ date, view }) => view === 'month' && events.some(event => eventDay(event.date)?.toDateString() === date.toDateString()) ? 'event-day' : null} className="event-filter-calendar" />{draftDate && <button type="button" onClick={() => setDraftDate(null)} className="mt-2 text-xs text-primary-700 underline">Clear date</button>}</div>
+    <div className="admin-table-scroll h-full min-w-0 overflow-y-auto bg-[#faf8f3] pt-3 text-ink-950">
+      <div className="container-custom pb-16">
+        <div className="flex min-w-0 flex-col gap-4 border-b border-[#e4ddd2] pb-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label="Event views">
+            {tabs.map(tab => <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} onClick={() => { setActiveTab(tab.id); setPage(1); }} className={'inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-sm font-semibold transition ' + (activeTab === tab.id ? 'border-primary-700 bg-primary-800 text-white' : 'border-[#e4ddd2] bg-white text-ink-700 hover:border-primary-400 hover:text-primary-800')}>{tab.label}<span className={'text-xs ' + (activeTab === tab.id ? 'text-white/80' : 'text-ink-500')}>{tab.count}</span></button>)}
           </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3"><button type="button" onClick={() => { setDraftCategory('all'); setDraftDate(null); }} className="text-xs text-slate-500 hover:text-slate-900">Clear</button><button type="button" onClick={() => { setCategory(draftCategory); setDateFilter(draftDate); setPage(1); setFilterPosition(null); filterButtonRef.current?.focus(); }} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">Apply</button></div>
-        </section>, document.body
-      )}
+          <div className="flex min-w-0 flex-col gap-3 md:flex-row xl:w-[min(45vw,760px)] xl:shrink-0">
+            <label className="relative min-w-0 flex-1"><span className="sr-only">Search events</span><FiSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-500" /><input value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search events by name or place" className="h-11 w-full rounded-md border border-[#ded8cd] bg-white pl-11 pr-4 text-sm outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-500/15" /></label>
+            <button ref={filterButtonRef} type="button" aria-expanded={Boolean(filterPosition)} aria-controls="event-filter-panel" onClick={openFilters} className={'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md border px-5 text-sm font-semibold transition hover:border-primary-600 ' + (category !== 'all' || dateFilter ? 'border-primary-700 bg-primary-50 text-primary-800' : 'border-[#ded8cd] bg-white text-ink-700')}><FiFilter aria-hidden="true" /> Filters</button>
+            <Link to="/contact" className="inline-flex h-11 shrink-0 items-center justify-center rounded-md border border-primary-700 px-4 text-sm font-semibold text-primary-800 transition hover:bg-primary-50">Organize an event</Link>
+          </div>
+        </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-gray-200 bg-white">
-        {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><CommonLoader size="lg" label="Loading events…" showLabel /></div>
-          : loadError ? <div className="flex min-h-0 flex-1 items-center justify-center gap-2 text-sm text-gray-600">Could not load events. <button type="button" onClick={retry} className="text-primary-700 underline">Retry</button></div>
-            : filteredEvents.length === 0 ? <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-gray-500">{activeTab === 'registered' && !isAuthenticated ? 'Log in to see your event registrations.' : 'No events match this view.'}</div>
-              : activeTab === 'gallery' ? <div className="admin-table-scroll grid min-h-0 flex-1 auto-rows-max grid-cols-2 gap-3 overflow-y-auto bg-slate-50 p-3 sm:grid-cols-3 lg:grid-cols-5">{visibleEvents.map(event => <button key={eventId(event)} type="button" onClick={() => viewEvent(event)} className="overflow-hidden rounded-lg border bg-white text-left hover:border-primary-300 hover:shadow"><div className="aspect-square bg-gray-100"><img src={event.image} alt="" className="h-full w-full object-cover" /></div><div className="truncate p-2 text-xs font-medium text-gray-800">{event.title}</div></button>)}</div>
-                : <>
-                  <div className="admin-table-scroll hidden min-h-0 flex-1 overflow-auto overscroll-contain lg:block">
-                    <table className="w-full table-fixed text-sm"><colgroup><col className="w-[27%]" /><col className="w-[13%]" /><col className="w-[16%]" /><col className="w-[14%]" /><col className="w-[11%]" /><col className="w-[19%]" /></colgroup>
-                      <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50"><tr>{['Event', 'Type', 'Date & Time', 'Location', 'Attendees', 'Actions'].map(label => <th key={label} className={'px-3 py-3 text-left text-xs font-medium uppercase text-gray-500 ' + (label === 'Actions' ? 'text-right' : '')}>{label}</th>)}</tr></thead>
-                      <tbody className="divide-y divide-gray-100">{visibleEvents.map(event => <tr key={eventId(event)} className="hover:bg-slate-50">
-                        <td className="px-3 py-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{event.image ? <img src={event.image} alt="" className="h-full w-full object-cover" /> : <FiCalendar />}</div><div className="min-w-0"><div className="truncate font-medium text-gray-900" title={event.title}>{event.title}</div><div className="truncate text-xs text-gray-500" title={event.description || ''}>{event.description || '—'}</div></div></div></td>
-                        <td className="truncate px-3 py-3"><span className={'rounded-full px-2 py-1 text-xs ' + (typeColors[event.type] || 'bg-gray-100 text-gray-700')}>{event.type || '—'}</span></td>
-                        <td className="px-3 py-3 text-gray-600"><div>{dateLabel(event.date)}</div><div className="truncate text-xs text-gray-500" title={event.time || ''}>{event.time || '—'}</div></td>
-                        <td className="truncate px-3 py-3 text-gray-600" title={event.location || ''}>{event.location || '—'}</td>
-                        <td className="px-3 py-3 text-gray-600">{attendeeLabel(event)}</td>
-                        <td className="px-3 py-3"><div className="flex items-center justify-end gap-2"><button type="button" onClick={() => viewEvent(event)} aria-label={'View ' + event.title} className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-primary-700 hover:bg-primary-50"><FiEye />View</button>{registrationAction(event)}</div></td>
-                      </tr>)}</tbody>
-                    </table>
-                  </div>
-                  <div className="admin-table-scroll min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2 lg:hidden">{visibleEvents.map(event => <article key={eventId(event)} className="rounded-lg border bg-white p-3 text-sm"><div className="flex gap-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-primary-50 text-primary-600">{event.image ? <img src={event.image} alt="" className="h-full w-full object-cover" /> : <FiCalendar />}</div><div className="min-w-0 flex-1"><h2 className="truncate font-semibold text-gray-900">{event.title}</h2><p className="mt-1 truncate text-xs text-gray-500">{event.type || 'Event'} · {event.location || 'Location unavailable'}</p><p className="mt-1 text-xs text-gray-500">{dateLabel(event.date)} · {event.time || 'Time TBA'}</p></div></div><p className="mt-2 line-clamp-2 text-gray-600">{event.description}</p><div className="mt-2 flex items-center justify-between gap-2 border-t pt-2"><span className="text-xs text-gray-500"><FiUsers className="mr-1 inline" />{attendeeLabel(event)}</span><div className="flex items-center gap-2"><button type="button" onClick={() => viewEvent(event)} className="inline-flex items-center gap-1 text-primary-700"><FiEye />View</button>{registrationAction(event)}</div></div></article>)}</div>
-                </>}
-        <Pagination page={currentPage} pageSize={pageSize} total={filteredEvents.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} disabled={loading} itemLabel="Events" />
+        {filterPosition && createPortal(
+          <section ref={filterPanelRef} id="event-filter-panel" role="dialog" aria-label="Event filters" tabIndex={-1} style={filterPosition} className="fixed z-50 w-80 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-md border border-[#ded8cd] bg-white shadow-xl outline-none">
+            <div className="flex items-center justify-between border-b border-[#eee9e0] px-4 py-3 text-sm font-semibold">Filters<button type="button" aria-label="Close filters" onClick={() => setFilterPosition(null)} className="rounded p-1 text-ink-500 hover:bg-primary-50"><FiX /></button></div>
+            <div className="space-y-4 p-4">
+              <div><label className="mb-1.5 block text-xs font-medium text-ink-500">Category</label><CommonSelect label="Category" value={draftCategory} onChange={setDraftCategory} options={[{ value: 'all', label: 'All Categories' }, ...categories.map(value => ({ value, label: value }))]} /></div>
+              <div><label className="mb-1.5 block text-xs font-medium text-ink-500">Event date</label><Calendar value={draftDate} onChange={setDraftDate} tileClassName={({ date, view }) => view === 'month' && events.some(event => eventDay(event.date)?.toDateString() === date.toDateString()) ? 'event-day' : null} className="event-filter-calendar" />{draftDate && <button type="button" onClick={() => setDraftDate(null)} className="mt-2 text-xs text-primary-700 underline">Clear date</button>}</div>
+            </div>
+            <div className="flex items-center justify-between border-t border-[#eee9e0] px-4 py-3"><button type="button" onClick={() => { setDraftCategory('all'); setDraftDate(null); }} className="text-sm text-ink-500 hover:text-ink-900">Clear</button><button type="button" onClick={() => { setCategory(draftCategory); setDateFilter(draftDate); setPage(1); setFilterPosition(null); filterButtonRef.current?.focus(); }} className="rounded-md bg-primary-800 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">Apply</button></div>
+          </section>, document.body
+        )}
+
+        <div className="mt-7">
+          {loading ? <div className="flex min-h-64 items-center justify-center"><CommonLoader size="lg" label="Loading events…" showLabel /></div>
+            : loadError ? <div className="rounded-md border border-[#e4ddd2] bg-white px-6 py-16 text-center"><h2 className="text-xl font-bold">Events could not load right now</h2><p className="mt-2 text-sm text-ink-600">Please try again in a moment.</p><button type="button" onClick={retry} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white">Try again</button></div>
+              : filteredEvents.length === 0 ? <div className="rounded-md border border-[#e4ddd2] bg-white px-6 py-14 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-primary-50 text-primary-800"><FiCalendar size={25} aria-hidden="true" /></div><h2 className="mt-4 text-xl font-bold">{activeTab === 'upcoming' ? 'No upcoming events right now' : activeTab === 'registered' ? 'No registrations yet' : 'No events found'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-600">{activeTab === 'registered' && !isAuthenticated ? 'Log in to see the events you have registered for.' : activeTab === 'upcoming' ? 'Browse past events or check back for new opportunities.' : 'Try another search, view, or filter.'}</p>{activeTab !== 'all' && <button type="button" onClick={() => { setActiveTab('all'); setPage(1); }} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Browse all events</button>}{activeTab === 'all' && (search.trim() || category !== 'all' || dateFilter) && <button type="button" onClick={() => { setSearch(''); setCategory('all'); setDateFilter(null); setPage(1); }} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Clear filters</button>}</div>
+                : activeTab === 'gallery' ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{visibleEvents.map(event => <button key={eventId(event)} type="button" onClick={() => viewEvent(event)} className="overflow-hidden rounded-md border border-[#e4ddd2] bg-white text-left transition hover:border-primary-400 hover:shadow-md"><EventCover event={event} className="aspect-[4/3] w-full" /><div className="p-4 text-base font-semibold text-ink-900">{event.title}</div></button>)}</div>
+                  : <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleEvents.map(event => <article key={eventId(event)} className="flex min-w-0 flex-col overflow-hidden rounded-md border border-[#e4ddd2] bg-white shadow-[0_14px_36px_-32px_rgba(9,42,43,0.45)] transition hover:border-primary-300 hover:shadow-md">
+                    <button type="button" onClick={() => viewEvent(event)} aria-label={'View ' + event.title} className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600">
+                      <EventCover event={event} className="h-40 w-full" showDate />
+                      <div className="p-5"><div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary-700"><span>{event.type || 'Event'}</span><span className="h-1 w-1 rounded-full bg-stone-400" aria-hidden="true" /><span className="text-ink-500">{isUpcoming(event) ? 'Upcoming' : 'Past'}</span></div><h2 className="mt-3 break-words text-xl font-bold leading-snug text-ink-950 [overflow-wrap:anywhere]">{event.title || 'Community event'}</h2><p className="mt-2 line-clamp-2 min-h-12 break-words text-sm leading-6 text-ink-600 [overflow-wrap:anywhere]">{event.description || 'Learn more about this event and how to take part.'}</p><div className="mt-4 space-y-2 text-sm text-ink-600">{event.time && <div className="flex items-start gap-2"><FiClock aria-hidden="true" className="mt-0.5 shrink-0" /><span>{event.time}</span></div>}{event.location && <div className="flex items-start gap-2"><FiMapPin aria-hidden="true" className="mt-0.5 shrink-0" /><span className="break-words [overflow-wrap:anywhere]">{event.location}</span></div>}<div className="flex items-center gap-2"><FiUsers aria-hidden="true" /><span>{attendeeLabel(event)} attendees</span></div></div></div>
+                    </button>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[#eee9e0] px-5 py-3"><button type="button" onClick={() => viewEvent(event)} className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-800 hover:text-primary-600">View details <FiArrowRight aria-hidden="true" /></button>{registrationAction(event)}</div>
+                  </article>)}</div>}
+          {!loading && !loadError && filteredEvents.length > pageSize && <div className="mt-8 overflow-hidden rounded-md border border-[#e4ddd2] bg-white"><Pagination page={currentPage} pageSize={pageSize} total={filteredEvents.length} onPageChange={setPage} onPageSizeChange={size => { setPageSize(size); setPage(1); }} itemLabel="Events" /></div>}
+        </div>
       </div>
-
+      <FoundationFooter />
       <CommonPopup open={Boolean(selectedEvent)} title={<div className="flex flex-wrap items-center gap-2"><span>{selectedEvent?.title || 'Event details'}</span>{selectedEvent?.type && <span className={'rounded-full px-2.5 py-1 text-xs font-medium ' + (typeColors[selectedEvent.type] || 'bg-gray-100 text-gray-700')}>{selectedEvent.type}</span>}</div>} onClose={() => setSelectedEvent(null)} size="lg" footer={selectedEvent && <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => toggleBookmark(eventId(selectedEvent))} aria-label={bookmarkedIds.includes(eventId(selectedEvent)) ? 'Remove bookmark' : 'Bookmark event'} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiBookmark className={bookmarkedIds.includes(eventId(selectedEvent)) ? 'fill-primary-600 text-primary-600' : ''} />Bookmark</button><button type="button" onClick={() => share(selectedEvent)} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiShare2 />Share</button><button type="button" onClick={() => downloadCalendar(selectedEvent)} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1.5 text-gray-700"><FiDownload />Calendar</button>{registrationAction(selectedEvent)}<button type="button" onClick={() => setSelectedEvent(null)} className="rounded border border-gray-300 px-3 py-1.5 text-gray-700">Close</button></div>}>
         {selectedEvent && <div className="space-y-5">
           <div className={selectedEvent.image ? 'grid gap-4 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]' : ''}>
-            {selectedEvent.image && <div className="flex h-48 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-2"><img src={selectedEvent.image} alt={selectedEvent.title} className="h-full w-full object-contain" /></div>}
+            {selectedEvent.image && <EventCover key={eventId(selectedEvent)} event={selectedEvent} className="h-48 rounded-md border border-[#e4ddd2]" />}
             <div className="min-w-0"><h3 className="mb-1 font-semibold text-gray-900">About the event</h3><p className="whitespace-pre-wrap text-gray-700">{selectedEvent.description || 'No description available.'}</p></div>
           </div>
           <div className="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2"><div><span className="text-gray-500">Date</span><p className="font-medium">{dateLabel(selectedEvent.date)}</p></div><div><span className="text-gray-500">Time</span><p className="font-medium">{selectedEvent.time || '—'}</p></div><div><span className="text-gray-500">Location</span><p className="font-medium">{selectedEvent.location || '—'}</p></div><div><span className="text-gray-500">Attendees</span><p className="font-medium">{attendeeLabel(selectedEvent)}</p></div><div><span className="text-gray-500">Entry</span><p className="font-medium">{Number(selectedEvent.price) > 0 ? '₹' + Number(selectedEvent.price).toLocaleString('en-IN') : 'Free'}</p></div><div><span className="text-gray-500">Availability</span><p className="font-medium">{isFull(selectedEvent) ? 'Full' : selectedEvent.capacity ? Math.max(Number(selectedEvent.capacity) - Number(selectedEvent.registered || 0), 0) + ' spots remaining' : 'Open registration'}</p></div></div>

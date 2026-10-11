@@ -7,7 +7,7 @@ const PageAccessGate = ({ pathname, children }) => {
   const dispatch = useDispatch();
   const access = useSelector(selectAccess);
   const token = localStorage.getItem('authToken');
-  const permission = pagePermissionByPath[pathname];
+  const permission = pagePermissionByPath[pathname] || (pathname.startsWith('/projects/') ? pagePermissionByPath['/projects'] : null);
 
   if (!token || !permission) return children;
   if (access.token !== token || ['idle', 'loading'].includes(access.status)) {

@@ -152,7 +152,7 @@ const Header = () => {
   const canViewUsers = isAdmin || permissions.includes('users:read');
   const canViewRoles = isAdmin || permissions.includes('roles:read');
   const canOpenPage = path => !isLoggedIn || permissions.includes(pagePermissionByPath[path]);
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || (path === '/projects' && location.pathname.startsWith('/projects/'));
 
   return (
     <header className={`fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#092b2d] text-white transition-shadow duration-300 ${

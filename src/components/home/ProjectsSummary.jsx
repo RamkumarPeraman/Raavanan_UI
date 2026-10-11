@@ -135,7 +135,8 @@ const ProjectsSummary = () => {
                 </div>
 
                 <Link
-                  to="/projects"
+                  to={project.id && !fallbackPrograms.some((item) => item.id === project.id) ? `/projects/${encodeURIComponent(project.id)}` : '/projects'}
+                  state={project.id && !fallbackPrograms.some((item) => item.id === project.id) ? { project } : undefined}
                   className="mt-6 inline-flex items-center font-semibold text-primary-700 hover:text-primary-800"
                 >
                   Learn about this work
