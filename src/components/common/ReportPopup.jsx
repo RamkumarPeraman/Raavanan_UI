@@ -5,7 +5,7 @@ import {
   FiClock, FiCheckCircle, FiTrendingUp, FiDollarSign
 } from 'react-icons/fi';
 
-const ReportPopup = ({ report, onClose, onDownload }) => {
+const ReportPopup = ({ report, onClose, onDownload, canDownload = false }) => {
   if (!report) return null;
 
   const getReportIcon = (type) => {
@@ -208,13 +208,13 @@ const ReportPopup = ({ report, onClose, onDownload }) => {
             >
               Close
             </button>
-            <button
+            {canDownload && <button
               onClick={() => onDownload(report)}
               className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
             >
               <FiDownload className="mr-2" />
-              Download Report
-            </button>
+              Open PDF
+            </button>}
           </div>
         </div>
       </div>

@@ -2,15 +2,17 @@ import CommonSelect from '../common/CommonSelect';
 import CommonPopup from '../common/CommonPopup';
 import React, { useState, useEffect } from 'react';
 import {
-  FiSave, FiImage, FiUpload, FiTrash2, FiPlus
+  FiSave, FiImage, FiUpload, FiTrash2, FiPlus, FiFileText, FiExternalLink
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { processImageFile } from '../../utils/imageUpload';
+import apiService from '../../services/api';
 
 const ContentPopup = ({ type, item, onClose, onSave }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [reportFile, setReportFile] = useState(null);
 
   // Form configuration based on content type
   const getFormConfig = () => {
@@ -113,9 +115,8 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
           { name: 'period', label: 'Period', type: 'text', col: 'half', placeholder: 'e.g., FY 2025-26' },
           { name: 'description', label: 'Description', type: 'textarea', required: true, col: 'full', rows: 4 },
           { name: 'publishedDate', label: 'Published Date', type: 'date', required: true, col: 'half' },
-          { name: 'url', label: 'File URL', type: 'text', col: 'half', placeholder: '/reports/example.pdf' },
           { name: 'pages', label: 'Number of Pages', type: 'number', col: 'half' },
-          { name: 'fileSize', label: 'File Size', type: 'text', col: 'half', placeholder: 'e.g., 2.5 MB' }
+          { name: 'file', label: 'Report PDF', type: 'file', col: 'full' }
         ]
       }
     };
@@ -123,15 +124,24 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
   };
 
   useEffect(() => {
+    setReportFile(null);
     if (item) {
-      setFormData(item);
+      const dateFields = getFormConfig().fields.filter((field) => field.type === 'date');
+      const normalizedDates = Object.fromEntries(dateFields.map((field) => {
+        const value = item[field.name];
+        const date = value ? new Date(value) : null;
+        return [field.name, date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : ''];
+      }));
+      setFormData({ ...item, ...normalizedDates });
       if (item.image) setPreviewImage(item.image);
     } else {
       // Initialize empty form
       const initialData = {};
       const config = getFormConfig();
       config.fields.forEach(field => {
-        if (field.type === 'list' || field.type === 'tags') {
+        if (field.type === 'file') {
+          return;
+        } else if (field.type === 'list' || field.type === 'tags') {
           initialData[field.name] = [];
         } else if (field.type === 'keyvalue') {
           initialData[field.name] = {};
@@ -204,13 +214,22 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
       toast.error(`Please fill in: ${missingFields.join(', ')}`);
       return;
     }
+    if (type === 'report' && !item && !reportFile) {
+      toast.error('Choose a PDF for this report.');
+      return;
+    }
 
     setLoading(true);
     try {
-      await onSave({
+      let payload = {
         ...formData,
         id: item?.id || Date.now()
-      });
+      };
+      if (type === 'report' && reportFile) {
+        const uploaded = await apiService.uploadReportFile(reportFile);
+        payload = { ...payload, url: uploaded.url, fileSize: uploaded.fileSize };
+      }
+      await onSave(payload);
       toast.success(`${item ? 'Updated' : 'Added'} successfully!`);
       onClose();
     } catch (error) {
@@ -275,6 +294,38 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {config.fields.map(field => {
               const colClass = field.col === 'full' ? 'md:col-span-2' : 'md:col-span-1';
+
+              if (field.type === 'file') {
+                const currentFileUrl = apiService.resolveReportFileUrl(formData.url);
+                return <div key={field.name} className={colClass}>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{field.label} {!item && <span className="text-red-500">*</span>}</label>
+                  {formData.url && <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 px-4 py-3">
+                    <FiFileText className="shrink-0 text-primary-700" size={22} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900">{currentFileUrl ? 'PDF attached' : 'Existing PDF link unavailable'}</p>
+                      <p className="text-xs text-gray-600">{currentFileUrl ? (formData.fileSize || 'Ready to open') : 'Upload a PDF to replace this old link.'}</p>
+                    </div>
+                    {currentFileUrl && <a href={currentFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-primary-300 bg-white px-3 py-1.5 text-sm font-medium text-primary-800 hover:bg-primary-100"><FiExternalLink size={15} /> Open PDF</a>}
+                    <button type="button" onClick={() => { setFormData((previous) => ({ ...previous, url: '', fileSize: '' })); setReportFile(null); }} className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"><FiTrash2 size={15} /> Remove</button>
+                  </div>}
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-4 transition-colors hover:border-primary-500 hover:bg-primary-50">
+                    <FiUpload className="shrink-0 text-primary-700" size={22} />
+                    <span className="min-w-0 text-sm"><span className="block font-semibold text-gray-800">{reportFile ? reportFile.name : formData.url ? 'Replace report PDF' : 'Choose a PDF file'}</span><span className="block text-xs text-gray-500">PDF only, up to 10 MB</span></span>
+                    <input type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      if (!/\.pdf$/i.test(file.name) || file.size > 10 * 1024 * 1024) {
+                        toast.error('Choose a PDF no larger than 10 MB.');
+                        event.target.value = '';
+                        return;
+                      }
+                      setReportFile(file);
+                    }} />
+                  </label>
+                  {reportFile && <div className="mt-1 flex items-center gap-3 text-xs text-gray-600"><span>Selected: {reportFile.name} ({(reportFile.size / (1024 * 1024)).toFixed(2)} MB)</span><button type="button" onClick={() => setReportFile(null)} className="font-medium text-red-700 hover:underline">Clear selection</button></div>}
+                  {item?.url && !formData.url && !reportFile && <p className="mt-1 text-xs text-amber-700">PDF will be removed when you click Update.</p>}
+                </div>;
+              }
 
               if (field.type === 'textarea') {
                 return (

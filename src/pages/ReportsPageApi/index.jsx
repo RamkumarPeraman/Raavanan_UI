@@ -102,13 +102,14 @@ const ReportsPageApi = () => {
   };
 
   const handleDownloadReport = (report) => {
-    if (report?.url) {
-      window.open(report.url, '_blank', 'noopener,noreferrer');
+    const fileUrl = apiService.resolveReportFileUrl(report?.url);
+    if (fileUrl) {
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
       toast.success(`Opening ${report.title}...`);
       return;
     }
 
-    toast.info('Download link will be available soon');
+    toast.info('A PDF has not been uploaded for this report yet.');
   };
 
   const handleClosePopup = () => {
@@ -253,9 +254,9 @@ const ReportsPageApi = () => {
                 <button type="button" onClick={() => handleViewReport(report)} className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-800 hover:text-primary-600">
                   View details <FiArrowRight aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => handleDownloadReport(report)} className="inline-flex items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
+                {apiService.resolveReportFileUrl(report.url) ? <button type="button" onClick={() => handleDownloadReport(report)} className="inline-flex items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
                   <FiDownload aria-hidden="true" /> Open file
-                </button>
+                </button> : <span className="text-xs font-medium text-ink-500">PDF not uploaded</span>}
               </div>
             </article>
           ))}
@@ -307,7 +308,7 @@ const ReportsPageApi = () => {
         )}
 
         {showPopup && selectedReport && (
-          <ReportPopup report={selectedReport} onClose={handleClosePopup} onDownload={handleDownloadReport} />
+          <ReportPopup report={selectedReport} onClose={handleClosePopup} onDownload={handleDownloadReport} canDownload={Boolean(apiService.resolveReportFileUrl(selectedReport.url))} />
         )}
       </div>
     </div>

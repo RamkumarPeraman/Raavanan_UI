@@ -901,6 +901,35 @@ const apiService = {
     return normalizeEntity(response.data?.data || response.data);
   },
 
+  uploadReportFile: async (file) => {
+    if (!file || file.size > 10 * 1024 * 1024) throw new Error('Choose a PDF no larger than 10 MB.');
+    const data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = () => reject(new Error('Could not read the selected PDF.'));
+      reader.readAsDataURL(file);
+    });
+    try {
+      const response = await api.post('/reports/upload', { name: file.name, data }, { timeout: 120000 });
+      return response.data?.data;
+    } catch (error) {
+      if (error.response?.status === 404) throw new Error('Report upload is unavailable on the API server. Restart the API service and try again.');
+      throwApiError(error);
+    }
+  },
+
+  resolveReportFileUrl: (url) => {
+    if (!url) return '';
+    // Demo seed links point to files that were never included with the app.
+    if (/^\/reports\/[^/]+\.pdf$/i.test(url)) return '';
+    try {
+      const resolved = new URL(url, new URL(config.api.baseURL, window.location.origin).origin);
+      return ['http:', 'https:'].includes(resolved.protocol) ? resolved.href : '';
+    } catch {
+      return '';
+    }
+  },
+
   createReportAdmin: async (reportData) => {
     const response = await api.post('/reports', reportData);
     return response.data?.data || response.data;
