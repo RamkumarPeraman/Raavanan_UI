@@ -95,9 +95,9 @@ const ProjectsSummary = () => {
             return (
             <article
               key={project.id}
-              className="overflow-hidden rounded-[2rem] border border-[#f0e4d3]/75 bg-white/88 shadow-[0_26px_70px_-42px_rgba(20,26,32,0.18)]"
+              className="flex h-[460px] min-w-0 flex-col overflow-hidden rounded-[2rem] border border-[#f0e4d3]/75 bg-white/88 shadow-[0_26px_70px_-42px_rgba(20,26,32,0.18)]"
             >
-              <div className={`bg-gradient-to-br ${project.theme || 'from-primary-50 to-accent-50'} p-6`}>
+              <div className={`flex h-40 shrink-0 flex-col justify-between bg-gradient-to-br ${project.theme || 'from-primary-50 to-accent-50'} p-5`}>
                 <div className="flex items-center justify-between">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/65 text-primary-800">
                     <Icon className="h-7 w-7" />
@@ -106,13 +106,13 @@ const ProjectsSummary = () => {
                     {project.status || 'ongoing'}
                   </span>
                 </div>
-                <h3 className="mt-12 text-2xl font-bold text-ink-950">{project.title}</h3>
+                <h3 className="line-clamp-2 break-words text-2xl font-bold text-ink-950 [overflow-wrap:anywhere]">{project.title}</h3>
               </div>
 
-              <div className="p-6">
-                <p className="text-sm leading-6 text-ink-600 md:text-base">{project.description}</p>
+              <div className="flex min-h-0 flex-1 flex-col p-5">
+                <p className="line-clamp-3 min-h-[72px] break-words text-sm leading-6 text-ink-600 [overflow-wrap:anywhere] md:text-base">{project.description}</p>
 
-                <div className="mt-6">
+                <div className="mt-4">
                   <div className="mb-2 flex justify-between text-sm">
                     <span className="text-ink-500">Current rollout</span>
                     <span className="font-semibold text-ink-900">{project.progress || 0}%</span>
@@ -125,11 +125,11 @@ const ProjectsSummary = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-                  {Object.entries(project.impact || {}).map(([key, value]) => (
-                    <div key={key} className="rounded-[1.25rem] bg-[#faf4ea]/70 px-3 py-4">
-                      <div className="text-sm font-bold text-primary-800">{value}</div>
-                      <div className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-500">{key}</div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  {Object.entries(project.impact || {}).slice(0, 3).map(([key, value]) => (
+                    <div key={key} className="min-w-0 rounded-xl bg-[#faf4ea]/70 px-2 py-2">
+                      <div className="truncate text-sm font-bold text-primary-800">{value}</div>
+                      <div className="mt-1 truncate text-xs uppercase tracking-[0.12em] text-ink-500">{key}</div>
                     </div>
                   ))}
                 </div>
@@ -137,7 +137,7 @@ const ProjectsSummary = () => {
                 <Link
                   to={project.id && !fallbackPrograms.some((item) => item.id === project.id) ? `/projects/${encodeURIComponent(project.id)}` : '/projects'}
                   state={project.id && !fallbackPrograms.some((item) => item.id === project.id) ? { project } : undefined}
-                  className="mt-6 inline-flex items-center font-semibold text-primary-700 hover:text-primary-800"
+                  className="mt-auto inline-flex items-center pt-4 font-semibold text-primary-700 hover:text-primary-800"
                 >
                   Learn about this work
                   <FiArrowRight className="ml-2" />

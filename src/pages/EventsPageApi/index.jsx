@@ -198,8 +198,8 @@ const EventsPageApi = () => {
   };
 
   return (
-    <div className="admin-table-scroll h-full min-w-0 overflow-y-auto bg-[#faf8f3] pt-3 text-ink-950">
-      <div className="container-custom pb-16">
+    <div className="admin-table-scroll flex h-full min-w-0 flex-col overflow-y-auto bg-[#faf8f3] pt-3 text-ink-950">
+      <div className="container-custom w-full flex-1 pb-10">
         <div className="flex min-w-0 flex-col gap-4 border-b border-[#e4ddd2] pb-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label="Event views">
             {tabs.map(tab => <button key={tab.id} type="button" aria-pressed={activeTab === tab.id} onClick={() => { setActiveTab(tab.id); setPage(1); }} className={'inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-sm font-semibold transition ' + (activeTab === tab.id ? 'border-primary-700 bg-primary-800 text-white' : 'border-[#e4ddd2] bg-white text-ink-700 hover:border-primary-400 hover:text-primary-800')}>{tab.label}<span className={'text-xs ' + (activeTab === tab.id ? 'text-white/80' : 'text-ink-500')}>{tab.count}</span></button>)}

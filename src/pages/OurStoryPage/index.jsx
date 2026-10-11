@@ -20,7 +20,7 @@ const milestones = [
 
 const OurStoryPage = () => {
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
+    <div className="pt-5 pb-16 min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white py-20">
         <div className="container-custom text-center">

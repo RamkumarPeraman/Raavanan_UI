@@ -50,7 +50,7 @@ function ScrollToTop() {
 function AppLayout() {
   const location = useLocation();
   const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/events', '/volunteer'].includes(location.pathname);
-  const isScrollablePage = ['/', '/contact', '/donate', '/profile'].includes(location.pathname) || location.pathname.startsWith('/projects');
+  const isScrollablePage = ['/', '/contact', '/donate', '/profile', '/our-story', '/key-figures'].includes(location.pathname) || location.pathname.startsWith('/projects');
   const isViewportPage = isFullHeightPage || isScrollablePage;
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/events', '/volunteer', '/donate'].includes(location.pathname);
 
@@ -124,7 +124,7 @@ function AppLayout() {
           } />
           </Routes>
           </PageAccessGate>
-          {['/', '/contact', '/projects'].includes(location.pathname) ? <Footer /> : null}
+          {['/', '/contact', '/projects', '/our-story', '/key-figures'].includes(location.pathname) ? <Footer /> : null}
         </main>
         {!hideFooter && !isScrollablePage && <Footer />}
       </div>

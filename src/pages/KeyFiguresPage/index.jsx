@@ -46,7 +46,7 @@ const members = [
 
 const KeyFiguresPage = () => {
   return (
-    <div className="pt-20 pb-16 min-h-screen bg-gray-50">
+    <div className="pt-5 pb-16 min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white py-20">
         <div className="container-custom text-center">
