@@ -59,7 +59,7 @@ function AppLayout() {
       <ScrollToTop />
       <Header />
       <div className={isViewportPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main key={location.pathname} className={['/volunteer', '/events'].includes(location.pathname) ? 'mt-16 min-h-0 flex-1 overflow-hidden md:mt-[4.5rem]' : isScrollablePage ? `${['/donate', '/profile'].includes(location.pathname) ? 'admin-table-scroll ' : ''}mt-16 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[4.5rem]` : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+        <main key={location.pathname} className={['/volunteer', '/events'].includes(location.pathname) ? 'mt-14 min-h-0 flex-1 overflow-hidden md:mt-[3.75rem]' : isScrollablePage ? `${['/donate', '/profile'].includes(location.pathname) ? 'admin-table-scroll ' : ''}mt-14 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[3.75rem]` : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}

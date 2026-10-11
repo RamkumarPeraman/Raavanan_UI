@@ -63,7 +63,7 @@ const SignupOtpPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7f6] pt-16 lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:min-h-0 lg:overflow-hidden lg:pt-0">
+    <div className="min-h-screen bg-[#f4f7f6] pt-14 lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-[3.75rem] lg:min-h-0 lg:overflow-hidden lg:pt-0">
       <div className="grid min-h-[calc(100vh-4rem)] lg:h-full lg:min-h-0 lg:grid-cols-[60%_40%]">
         <section className="relative min-h-[260px] overflow-hidden lg:min-h-0">
           <img src={loginPageImage} alt="Young volunteers working together" className="absolute inset-0 h-full w-full object-cover" />

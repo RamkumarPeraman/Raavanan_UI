@@ -162,7 +162,7 @@ const Header = () => {
     }`}>
       <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-[#14565a]/55 to-transparent" />
       <div className="container-custom">
-        <div className="relative flex h-16 items-center gap-3 md:h-[4.5rem]">
+        <div className="relative flex h-14 items-center gap-3 md:h-[3.75rem]">
           <button
             ref={mobileMenuButtonRef}
             type="button"
@@ -179,7 +179,7 @@ const Header = () => {
           </button>
 
           <Link to="/" className="group flex min-w-0 shrink-0 items-center gap-2.5" aria-label="Raavana Thalaigal Trust home">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-2 ring-[#eebd62]/70 shadow-[0_0_0_5px_rgba(238,189,98,0.1)] transition-transform duration-300 group-hover:rotate-[-7deg] md:h-11 md:w-11">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-2 ring-[#eebd62]/70 shadow-[0_0_0_5px_rgba(238,189,98,0.1)] transition-transform duration-300 group-hover:rotate-[-7deg] md:h-10 md:w-10">
               <img src={ravanaLogo} alt="Raavana Thalaigal Trust logo" className="block h-full w-full object-cover" />
             </div>
             <span className="min-w-0 leading-tight">
@@ -193,7 +193,7 @@ const Header = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex h-full items-center px-2 text-sm font-semibold transition-colors after:absolute after:bottom-3 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:transition-opacity lg:px-3 lg:after:left-3 lg:after:right-3 ${
+                className={`relative flex h-full items-center px-2 text-sm font-semibold transition-colors after:absolute after:bottom-2 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:transition-opacity lg:px-3 lg:after:left-3 lg:after:right-3 ${
                   isActive(item.path)
                     ? 'text-[#f4cb87] after:bg-[#f4a94f] after:opacity-100'
                     : 'text-white/75 after:bg-[#f4a94f] after:opacity-0 hover:text-white hover:after:opacity-80'
@@ -267,7 +267,7 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && createPortal(
-        <div className="fixed inset-x-0 bottom-0 top-16 z-[45] md:hidden">
+        <div className="fixed inset-x-0 bottom-0 top-14 z-[45] md:hidden">
         <button
           type="button"
           className="absolute inset-0 h-full w-full bg-ink-950/35"
