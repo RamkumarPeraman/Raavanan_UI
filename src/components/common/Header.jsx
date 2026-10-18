@@ -20,6 +20,7 @@ import apiService from '../../services/api';
 import { pagePermissionByPath } from '../../constants/pageAccess';
 import { selectPermissions } from '../../store/accessStore';
 import { useSiteLanguage } from '../../hooks/useSiteLanguage';
+import { translate } from '../../i18n/translate';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') return role;
@@ -39,19 +40,6 @@ const navigationItems = [
   { name: 'Publications', path: '/publications' },
 ];
 
-const tamilLabels = {
-  Home: 'முகப்பு',
-  Events: 'நிகழ்வுகள்',
-  Volunteer: 'தன்னார்வம்',
-  Publications: 'வெளியீடுகள்',
-  'Donate Now': 'நன்கொடை அளிக்க',
-  Login: 'உள்நுழைய',
-  'My Profile': 'என் சுயவிவரம்',
-  'Admin Dashboard': 'நிர்வாகப் பலகை',
-  'User Management': 'பயனர் மேலாண்மை',
-  'Roles Management': 'பொறுப்பு மேலாண்மை',
-  Logout: 'வெளியேறு',
-};
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,7 +57,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [language, changeLanguage] = useSiteLanguage();
-  const label = (english) => language === 'ta' ? tamilLabels[english] || english : english;
+  const label = (english) => translate('header', english, language);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return undefined;
@@ -205,7 +193,7 @@ const Header = () => {
     }`}>
       <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-[#14565a]/55 to-transparent" />
       <div className="container-custom">
-        <div className="relative flex h-14 items-center gap-3 md:h-[3.75rem]">
+        <div className="relative flex h-14 items-center gap-1.5 sm:gap-3 md:h-[3.75rem]">
           <button
             ref={mobileMenuButtonRef}
             type="button"
@@ -214,7 +202,7 @@ const Header = () => {
               setIsLanguageMenuOpen(false);
               setIsMobileMenuOpen((open) => !open);
             }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white transition-colors hover:bg-white/10 md:hidden"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white transition-colors hover:bg-white/10 sm:h-10 sm:w-10 md:hidden"
             aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-navigation"
@@ -222,13 +210,13 @@ const Header = () => {
             {isMobileMenuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
 
-          <Link to="/" className="group flex min-w-0 shrink-0 items-center gap-2.5" aria-label="Raavana Thalaigal Trust home">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-2 ring-[#eebd62]/70 shadow-[0_0_0_5px_rgba(238,189,98,0.1)] transition-transform duration-300 group-hover:rotate-[-7deg] md:h-10 md:w-10">
+          <Link to="/" className="group flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5 md:flex-none" aria-label={label('Raavana Thalaigal Trust - TamilNadu')}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff2cf] ring-2 ring-[#eebd62]/70 shadow-[0_0_0_5px_rgba(238,189,98,0.1)] transition-transform duration-300 group-hover:rotate-[-7deg] sm:h-9 sm:w-9 md:h-10 md:w-10">
               <img src={ravanaLogo} alt="Raavana Thalaigal Trust logo" className="block h-full w-full object-cover" />
             </div>
-            <span className="min-w-0 leading-tight">
-              <span className="block max-w-[8rem] truncate text-sm font-bold tracking-tight text-white sm:max-w-[11rem] sm:text-base lg:max-w-none lg:text-lg">Raavana Thalaigal</span>
-              <span className="block text-[8px] md:text-[10.4px] font-semibold uppercase tracking-[0.34em] text-[#EEC709]">Trust-TamilNadu</span>
+            <span className="min-w-0 flex-1 leading-tight md:flex-none">
+              <span className={`block break-words font-bold text-white sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-[10px] leading-[1.15] sm:text-sm lg:text-base' : 'text-[10px] tracking-tight sm:text-base lg:text-lg'}`}>{label('Raavana Thalaigal')}</span>
+              <span className={`block break-words font-semibold text-[#EEC709] sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-[8px] leading-[1.15] sm:text-xs lg:text-sm' : 'text-[7px] uppercase tracking-[0.2em] sm:text-[10.4px] sm:tracking-[0.34em]'}`}>{label('Trust-TamilNadu')}</span>
             </span>
           </Link>
 
@@ -248,13 +236,13 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-2 lg:ml-3">
+          <div className="flex shrink-0 items-center gap-1 sm:ml-auto sm:gap-2 md:ml-2 lg:ml-3">
             {canOpenPage('/donate') && <Link
               to="/donate"
-              className="flex h-10 items-center justify-center rounded-lg bg-[#EEC709] px-3 font-bold text-[#123537] shadow-[0_4px_0_#bd702f] transition-all hover:-translate-y-0.5 hover:bg-[#EEC702] md:px-5"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EEC709] font-bold text-[#123537] shadow-[0_4px_0_#bd702f] transition-all hover:-translate-y-0.5 hover:bg-[#EEC702] sm:h-10 sm:w-auto sm:px-3 md:px-5"
               aria-label={label('Donate Now')}
             >
-              <FiHeart className="lg:hidden" size={19} />
+              <FiHeart className="lg:hidden" size={17} />
               <span className="hidden lg:inline">{label('Donate Now')}</span>
             </Link>}
 
@@ -266,7 +254,7 @@ const Header = () => {
                   setIsUserMenuOpen(false);
                   setIsLanguageMenuOpen((open) => !open);
                 }}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 sm:h-10 sm:w-10"
                 aria-label={language === 'ta' ? 'மொழியைத் தேர்ந்தெடுக்கவும்' : 'Choose language'}
                 aria-expanded={isLanguageMenuOpen}
                 aria-controls="site-language-options"
@@ -288,15 +276,15 @@ const Header = () => {
 
             {isLoggedIn ? (
               <div ref={userMenuRef} className="relative">
-                <button
+              <button
                   ref={userMenuButtonRef}
                   type="button"
                   onClick={() => { setIsLanguageMenuOpen(false); setIsUserMenuOpen((open) => !open); }}
-                  className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-1 transition-colors hover:bg-white/10"
+                  className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-0.5 transition-colors hover:bg-white/10 sm:p-1"
                   aria-label={isUserMenuOpen ? 'Close account menu' : 'Open account menu'}
                   aria-expanded={isUserMenuOpen}
                 >
-                  <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary-200 font-semibold text-primary-700 ring-1 ring-primary-300/60">
+                  <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary-200 font-semibold text-primary-700 ring-1 ring-primary-300/60 sm:h-9 sm:w-9">
                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     {user?.profileImage && (
                       <img

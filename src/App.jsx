@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Header from './components/common/Header';
 import Footer from './components/common/FoundationFooter';
 import CommonTooltip from './components/common/CommonTooltip';
+import SiteTranslator from './components/common/SiteTranslator';
 import ProtectedRoute from './components/ProtectedRoute';
 import PageAccessGate from './components/PageAccessGate';
 import AccessBootstrap from './components/AccessBootstrap';
@@ -130,6 +131,7 @@ function AppLayout() {
       </div>
       <ToastContainer position="top-right" autoClose={5000} />
       <CommonTooltip />
+      <SiteTranslator />
     </div>
   );
 }

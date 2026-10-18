@@ -2,18 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { FiArrowRight, FiBookOpen, FiDownload, FiMail, FiSearch } from 'react-icons/fi';
 import { books } from './catalog';
 import { useSiteLanguage } from '../../hooks/useSiteLanguage';
+import { translate } from '../../i18n/translate';
 import './publications.css';
 
-const tamilLabels = {
-  'All books': 'அனைத்து நூல்கள்', Community: 'சமூகம்', Culture: 'பண்பாடு', Education: 'கல்வி', Youth: 'இளைஞர்கள்', Paperback: 'மென் அட்டை',
-  'Search publications': 'வெளியீடுகளைத் தேடு', 'Search books or topics': 'நூல்கள் அல்லது தலைப்புகளைத் தேடு', 'Filter books by category': 'வகை வாரியாக நூல்களை வடிகட்டு',
-  Edition: 'பதிப்பு', Published: 'வெளியீட்டு ஆண்டு', Access: 'அணுகல்', Fee: 'கட்டணம்', Free: 'இலவசம்', Paid: 'கட்டண நூல்', 'To be confirmed': 'உறுதிசெய்யப்படவில்லை',
-  'Open PDF': 'PDF-ஐத் திற', 'Available after purchase': 'வாங்கிய பிறகு கிடைக்கும்', 'PDF not yet available': 'PDF இன்னும் கிடைக்கவில்லை',
-  'Request to buy': 'வாங்கக் கோருங்கள்', 'Ask about this book': 'இந்த நூலைப் பற்றி கேளுங்கள்', 'Ask about books': 'நூல்களைப் பற்றி கேளுங்கள்',
-  'No books found': 'நூல்கள் எதுவும் கிடைக்கவில்லை', 'Try another search or category.': 'வேறு தேடல் அல்லது வகையை முயற்சிக்கவும்.', 'Show all books': 'அனைத்து நூல்களையும் காட்டு',
-  'Publication enquiries': 'வெளியீட்டு விசாரணைகள்', 'Looking for a particular publication?': 'குறிப்பிட்ட வெளியீட்டைத் தேடுகிறீர்களா?',
-  'Write to us for availability, pricing, and delivery information.': 'கிடைக்கும் நூல்கள், விலை மற்றும் விநியோக விவரங்களுக்கு எங்களுக்கு எழுதுங்கள்.', 'Contact us': 'எங்களைத் தொடர்புகொள்ளுங்கள்',
-};
 
 const categories = ['All books', ...new Set(books.map((book) => book.category))];
 const enquiryAddress = 'enquiry.raavanathalaigal@gmail.com';
@@ -38,7 +29,7 @@ const BookCover = ({ book }) => (
 
 const PublicationsPage = () => {
   const [language] = useSiteLanguage();
-  const label = (english) => language === 'ta' ? tamilLabels[english] || english : english;
+  const label = (english) => translate('publications', english, language);
   const [category, setCategory] = useState('All books');
   const [search, setSearch] = useState('');
   const visibleBooks = useMemo(() => {

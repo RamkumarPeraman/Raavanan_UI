@@ -20,57 +20,8 @@ import { toast } from 'react-toastify';
 import apiService from '../../services/api';
 import { processImageFile } from '../../utils/imageUpload';
 import { useSiteLanguage } from '../../hooks/useSiteLanguage';
+import { translate } from '../../i18n/translate';
 
-const tamilLabels = {
-  'Volunteer hours': 'தன்னார்வ மணிநேரங்கள்',
-  'Events attended': 'பங்கேற்ற நிகழ்வுகள்',
-  'Total donated': 'மொத்த நன்கொடை',
-  'Impact score': 'தாக்க மதிப்பெண்',
-  'Could not load your profile': 'உங்கள் சுயவிவரத்தை ஏற்ற முடியவில்லை',
-  'The server did not respond. Please try again.': 'சேவையகம் பதிலளிக்கவில்லை. மீண்டும் முயற்சிக்கவும்.',
-  Retry: 'மீண்டும் முயற்சி',
-  Member: 'உறுப்பினர்',
-  'Add a short bio so the community can get to know you better.': 'சமூகம் உங்களை அறிய ஒரு சிறு அறிமுகத்தைச் சேர்க்கவும்.',
-  'Regular Member': 'வழக்கமான உறுப்பினர்',
-  'Member since': 'உறுப்பினரான நாள்',
-  'Location not added': 'இருப்பிடம் சேர்க்கப்படவில்லை',
-  'Edit Profile': 'சுயவிவரத்தைத் திருத்து',
-  'Save Changes': 'மாற்றங்களைச் சேமி',
-  'Saving…': 'சேமிக்கிறது…',
-  Cancel: 'ரத்துசெய்',
-  'Personal information': 'தனிப்பட்ட தகவல்',
-  'Your core profile and contact details.': 'உங்கள் சுயவிவரம் மற்றும் தொடர்பு விவரங்கள்.',
-  'Full name': 'முழுப் பெயர்',
-  'Email address': 'மின்னஞ்சல் முகவரி',
-  'Phone number': 'தொலைபேசி எண்',
-  Location: 'இருப்பிடம்',
-  'Date of birth': 'பிறந்த தேதி',
-  Gender: 'பாலினம்',
-  'About you': 'உங்களைப் பற்றி',
-  'Write a short bio': 'சிறு அறிமுகத்தை எழுதுங்கள்',
-  'Address & membership': 'முகவரி மற்றும் உறுப்பினர் விவரம்',
-  'Where you are based and your member record.': 'உங்கள் இருப்பிடம் மற்றும் உறுப்பினர் பதிவு.',
-  Email: 'மின்னஞ்சல்',
-  'Membership ID': 'உறுப்பினர் எண்',
-  'Not set': 'அமைக்கப்படவில்லை',
-  Pending: 'நிலுவையில் உள்ளது',
-  'Street address': 'தெரு முகவரி',
-  City: 'நகரம்',
-  State: 'மாநிலம்',
-  Pincode: 'அஞ்சல் குறியீடு',
-  Country: 'நாடு',
-  'Password & security': 'கடவுச்சொல் மற்றும் பாதுகாப்பு',
-  'Keep your account protected with a strong password.': 'வலுவான கடவுச்சொல்லுடன் உங்கள் கணக்கைப் பாதுகாக்கவும்.',
-  Close: 'மூடு',
-  'Change password': 'கடவுச்சொல்லை மாற்று',
-  'Current password': 'தற்போதைய கடவுச்சொல்',
-  'New password': 'புதிய கடவுச்சொல்',
-  'Confirm new password': 'புதிய கடவுச்சொல்லை உறுதிப்படுத்தவும்',
-  'Update password': 'கடவுச்சொல்லைப் புதுப்பி',
-  'Delete account': 'கணக்கை நீக்கு',
-  'Permanently remove your account and profile data. This action cannot be undone.': 'உங்கள் கணக்கு மற்றும் சுயவிவரத் தரவு நிரந்தரமாக நீக்கப்படும். இதை மாற்ற முடியாது.',
-  'Enter password to confirm': 'உறுதிப்படுத்த கடவுச்சொல்லை உள்ளிடவும்',
-};
 
 const createEmptyUser = () => ({
   id: '',
@@ -93,7 +44,7 @@ const createEmptyUser = () => ({
 const ProfilePageApi = () => {
   const navigate = useNavigate();
   const [language] = useSiteLanguage();
-  const label = (english) => language === 'ta' ? tamilLabels[english] || english : english;
+  const label = (english) => translate('profile', english, language);
   const [user, setUser] = useState(createEmptyUser());
   const [formData, setFormData] = useState(createEmptyUser());
   const [loading, setLoading] = useState(true);
