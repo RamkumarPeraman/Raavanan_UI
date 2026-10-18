@@ -32,9 +32,9 @@ const normalizeRole = (role) => {
 
 const navigationItems = [
   { name: 'Home', path: '/' },
-  { name: 'Projects', path: '/projects' },
   { name: 'Events', path: '/events' },
   { name: 'Volunteer', path: '/volunteer' },
+  { name: 'Publications', path: '/publications' },
 ];
 
 const Header = () => {
@@ -152,7 +152,7 @@ const Header = () => {
   const canViewUsers = isAdmin || permissions.includes('users:read');
   const canViewRoles = isAdmin || permissions.includes('roles:read');
   const canOpenPage = path => !isLoggedIn || permissions.includes(pagePermissionByPath[path]);
-  const isActive = (path) => location.pathname === path || (path === '/projects' && location.pathname.startsWith('/projects/'));
+  const isActive = (path) => location.pathname === path;
 
   return (
     <header className={`fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#092b2d] text-white transition-shadow duration-300 ${

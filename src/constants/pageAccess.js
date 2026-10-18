@@ -1,6 +1,6 @@
 export const pageGroups = [
   { label: 'Public pages', pages: [
-    ['Home', '/', 'home'], ['Projects', '/projects', 'projects'], ['Events', '/events', 'events'],
+    ['Home', '/', 'home'], ['Publications', '/publications', 'projects'], ['Events', '/events', 'events'],
     ['Volunteer', '/volunteer', 'volunteer'], ['Donate', '/donate', 'donate'], ['Blogs', '/blogs', 'blogs'],
     ['Reports', '/reports', 'reports'], ['Contact', '/contact', 'contact'], ['Our Story', '/our-story', 'our_story'],
     ['Key Figures', '/key-figures', 'key_figures'],

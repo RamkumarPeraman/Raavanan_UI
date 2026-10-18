@@ -17,7 +17,7 @@ import apiService from '../../services/api';
 const QUICK_QUESTIONS = [
   'How can I donate?',
   'How can I volunteer?',
-  'What projects are ongoing?',
+  'Where can I find books?',
   'Are there any upcoming events?',
   'How do I contact the team?',
 ];
@@ -40,12 +40,12 @@ const BUILT_IN_FAQS = [
     keywords: ['volunteer', 'join', 'help', 'support team', 'register volunteer'],
   },
   {
-    id: 'projects',
-    question: 'What projects does this platform have?',
+    id: 'publications',
+    question: 'Where can I find books?',
     answer:
-      'The Projects page lists education, healthcare, women empowerment, environment, and other community initiatives. You can search, filter by category, and open any project for more details.',
-    cta: { label: 'Browse Projects', path: '/projects' },
-    keywords: ['project', 'projects', 'initiative', 'initiatives', 'program', 'programs'],
+      'The Publications page shows a preview of the book collection. Contact the team to ask which titles are available and how to order.',
+    cta: { label: 'Browse Publications', path: '/publications' },
+    keywords: ['book', 'books', 'publication', 'publications', 'buy book', 'order book'],
   },
   {
     id: 'events',
@@ -176,7 +176,7 @@ const buildProjectAnswer = (matches) => {
 
   return {
     text: lines.join(' '),
-    cta: { label: 'View Projects', path: '/projects' },
+    cta: { label: 'Contact the Team', path: '/contact' },
   };
 };
 
@@ -217,12 +217,11 @@ const buildBlogAnswer = (matches) => {
 };
 
 const buildFallbackAnswer = (context) => {
-  const ongoingCount = context.projects.filter((project) => project.status === 'ongoing').length;
   const eventCount = context.events.length;
 
   return {
-    text: `I can help with donations, volunteering, contact details, reports, events, and project information. Right now I can see ${ongoingCount} ongoing projects and ${eventCount} events in the system. Try asking about education projects, upcoming events, reports, or how to donate.`,
-    cta: { label: 'Browse Projects', path: '/projects' },
+    text: `I can help with publications, donations, volunteering, contact details, reports, and events. Right now I can see ${eventCount} events in the system. Try asking about books, upcoming events, reports, or how to donate.`,
+    cta: { label: 'Browse Publications', path: '/publications' },
   };
 };
 
@@ -231,7 +230,7 @@ const createInitialMessages = () => [
     id: 'welcome',
     role: 'bot',
     text:
-      'Hello. I can answer built-in questions about this platform and also help with project, event, blog, donation, volunteer, and report queries.',
+      'Hello. I can help with publications, events, blogs, donations, volunteering, and reports.',
   },
 ];
 
@@ -566,7 +565,7 @@ const ProjectChatbot = () => {
               </span>
               <span>
                 <span className="block text-sm font-semibold text-ink-900">Chatbot</span>
-                <span className="block text-xs text-ink-500">Ask about projects, events, reports, volunteering, and platform details.</span>
+                <span className="block text-xs text-ink-500">Ask about books, events, reports, volunteering, and platform details.</span>
               </span>
             </button>
             <button
@@ -597,8 +596,8 @@ const ProjectChatbot = () => {
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Assistant</p>
-                  <h2 className="mt-1 text-2xl font-bold">Project Chat</h2>
-                  <p className="mt-1 text-sm text-white/80">Ask about this platform, projects, events, reports, or volunteering.</p>
+                  <h2 className="mt-1 text-2xl font-bold">Community Chat</h2>
+                  <p className="mt-1 text-sm text-white/80">Ask about this platform, publications, events, reports, or volunteering.</p>
                 </div>
                 <button
                   type="button"

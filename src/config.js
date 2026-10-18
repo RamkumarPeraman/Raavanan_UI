@@ -162,7 +162,7 @@ const config = {
     main: [
       { name: 'Home', path: '/' },
       { name: 'About', path: '/about' },
-      { name: 'Projects', path: '/projects' },
+      { name: 'Publications', path: '/publications' },
       { name: 'Blogs', path: '/blogs' },
       { name: 'Events', path: '/events' },
       { name: 'Volunteer', path: '/volunteer' },

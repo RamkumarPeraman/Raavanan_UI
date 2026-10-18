@@ -1,0 +1,88 @@
+.publication-card-stage {
+  display: grid;
+  min-height: 286px;
+  place-items: center;
+  padding: 28px;
+  background: radial-gradient(circle at 50% 35%, #fffdf7, #ede5d8);
+}
+
+.publication-cover {
+  --cover-ink: #fff8e8;
+  position: relative;
+  width: min(190px, 65%);
+  aspect-ratio: 0.72;
+  overflow: hidden;
+  color: var(--cover-ink);
+  background: var(--cover-background);
+  box-shadow: 9px 13px 18px rgba(34, 28, 21, 0.24), inset -3px 0 5px rgba(0, 0, 0, 0.16);
+  transform: rotate(-4deg);
+  transition: transform 250ms ease, box-shadow 250ms ease;
+}
+
+.group:hover .publication-cover {
+  transform: rotate(-1deg) translateY(-4px);
+  box-shadow: 10px 18px 24px rgba(34, 28, 21, 0.28), inset -3px 0 5px rgba(0, 0, 0, 0.16);
+}
+
+.publication-cover--coral { --cover-background: #aa483a; }
+.publication-cover--forest { --cover-background: #254c41; }
+.publication-cover--ochre { --cover-background: #ad762d; }
+.publication-cover--indigo { --cover-background: #333f68; }
+.publication-cover--rose { --cover-background: #95516b; }
+.publication-cover--teal { --cover-background: #226a6a; }
+
+.publication-cover__spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 12px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.27), rgba(255, 255, 255, 0.12), transparent);
+}
+
+.publication-cover__content {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 16px 16px 24px;
+}
+
+.publication-cover__series,
+.publication-cover__number {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.publication-cover__art {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  margin: 15px 0;
+  border: 1px solid rgba(255, 248, 232, 0.65);
+  border-radius: 50% 50% 2px 2px;
+}
+
+.publication-cover__art span {
+  position: absolute;
+  bottom: 0;
+  width: 42%;
+  height: 58%;
+  border: 1px solid rgba(255, 248, 232, 0.65);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+}
+
+.publication-cover__art span:nth-child(1) { left: 8%; height: 48%; }
+.publication-cover__art span:nth-child(2) { left: 29%; height: 75%; }
+.publication-cover__art span:nth-child(3) { right: 8%; height: 58%; }
+
+.publication-cover__title {
+  max-width: 100%;
+  margin-bottom: 11px;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.1;
+}

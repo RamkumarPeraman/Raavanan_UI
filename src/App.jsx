@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -16,8 +16,7 @@ import AccessBootstrap from './components/AccessBootstrap';
 import HomePage from './pages/HomePage';
 import DonationPage from './pages/DonationPage';
 import VolunteerPage from './pages/VolunteerPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectDetailPage from './pages/ProjectsPage/ProjectDetailPage';
+import PublicationsPage from './pages/PublicationsPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -50,7 +49,7 @@ function ScrollToTop() {
 function AppLayout() {
   const location = useLocation();
   const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/events', '/volunteer'].includes(location.pathname);
-  const isScrollablePage = ['/', '/contact', '/donate', '/profile', '/our-story', '/key-figures', '/reports', '/blogs'].includes(location.pathname) || location.pathname.startsWith('/projects');
+  const isScrollablePage = ['/', '/contact', '/donate', '/profile', '/our-story', '/key-figures', '/reports', '/blogs', '/publications'].includes(location.pathname) || location.pathname.startsWith('/projects');
   const isViewportPage = isFullHeightPage || isScrollablePage;
   const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/events', '/volunteer', '/donate'].includes(location.pathname);
 
@@ -66,8 +65,9 @@ function AppLayout() {
           <Route path="/" element={<HomePage />} />
           <Route path="/donate" element={<DonationPage />} />
           <Route path="/volunteer" element={<VolunteerPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          <Route path="/publications" element={<PublicationsPage />} />
+          <Route path="/projects" element={<Navigate to="/publications" replace />} />
+          <Route path="/projects/:id" element={<Navigate to="/publications" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -124,7 +124,7 @@ function AppLayout() {
           } />
           </Routes>
           </PageAccessGate>
-          {['/', '/contact', '/projects', '/our-story', '/key-figures', '/reports', '/blogs'].includes(location.pathname) ? <Footer /> : null}
+          {['/', '/contact', '/publications', '/our-story', '/key-figures', '/reports', '/blogs'].includes(location.pathname) ? <Footer /> : null}
         </main>
         {!hideFooter && !isScrollablePage && <Footer />}
       </div>
