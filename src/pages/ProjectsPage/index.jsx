@@ -74,8 +74,8 @@ const ProjectsPage = () => {
   const description = selectedProject?.description?.trim();
   const additionalDetails = selectedProject?.longDescription?.trim();
 
-  return <div className="min-h-full bg-[#faf8f3] text-ink-950">
-    <section className="container-custom pb-20 pt-2" aria-labelledby="project-list-title">
+  return <div className="flex min-h-full flex-col bg-[#faf8f3] text-ink-950">
+    <section className={`container-custom flex flex-1 flex-col pt-2 ${loading ? 'pb-0' : 'pb-20'}`} aria-labelledby="project-list-title">
       <h1 id="project-list-title" className="sr-only">Projects</h1>
       <div className="mb-4 flex min-w-0 flex-col gap-3 border-b border-[#e4ddd2] pb-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex max-w-full min-w-0 gap-2 overflow-x-auto" role="group" aria-label="Project views">
@@ -87,7 +87,7 @@ const ProjectsPage = () => {
         </div>
       </div>
 
-      {loading ? <div className="flex min-h-64 items-center justify-center"><CommonLoader size="lg" label="Loading projects…" showLabel /></div>
+      {loading ? <div className="flex min-h-64 flex-1 items-center justify-center"><CommonLoader size="lg" label="Loading projects…" showLabel /></div>
         : loadError ? <div className="rounded-md border border-[#e4ddd2] bg-white px-6 py-16 text-center"><h2 className="text-xl font-bold">Projects could not load right now</h2><p className="mt-2 text-sm text-ink-600">Please try again in a moment.</p><button type="button" onClick={loadProjects} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Try again</button></div>
         : filteredProjects.length === 0 ? <div className="rounded-md border border-[#e4ddd2] bg-white px-6 py-14 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-primary-50 text-primary-700"><FiTarget size={26} aria-hidden="true" /></div><h2 className="mt-4 text-xl font-bold">{projects.length === 0 ? 'Project stories are on their way' : 'No projects found'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-600">{projects.length === 0 ? 'We are preparing the details of our work. Please check back soon.' : 'Try a different search or filter to see more projects.'}</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-5 rounded-md bg-primary-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Browse all projects</button>}</div>
           : <><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{filteredProjects.slice(0, visibleCount).map((project) => {
