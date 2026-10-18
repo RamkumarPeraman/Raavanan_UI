@@ -135,7 +135,7 @@ const FoundationHero = () => {
 
               <div className="text-reveal text-reveal-delay-3 mt-6 rounded-[1.5rem] border border-primary-800/40 bg-primary-900 px-6 py-6 text-white shadow-[0_18px_40px_-28px_rgba(8,38,40,0.55)]">
                 <div className="flex items-center gap-3">
-                  <FiHeart className="h-5 w-5 text-accent-300" />
+                  <FiHeart className="h-5 w-5 text-[#EEC709]" />
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/78">
                     Community note
                   </span>

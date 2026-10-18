@@ -90,7 +90,7 @@ const LatestNews = () => {
       <div className="container-custom">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <div className="text-reveal text-xs font-semibold uppercase tracking-[0.22em] text-accent-300">
+            <div className="text-reveal text-xs font-semibold uppercase tracking-[0.22em] text-[#EEC709]">
               Stories and updates
             </div>
             <h2 className="text-reveal text-reveal-delay-1 mt-4 text-3xl font-bold md:text-4xl">
@@ -101,7 +101,7 @@ const LatestNews = () => {
               across communities.
             </p>
           </div>
-          <Link to="/blogs" className="text-reveal text-reveal-delay-3 inline-flex items-center font-semibold text-accent-300">
+          <Link to="/blogs" className="text-reveal text-reveal-delay-3 inline-flex items-center font-semibold text-[#EEC709]">
             Visit the blog
             <FiArrowRight className="ml-2" />
           </Link>
@@ -210,7 +210,7 @@ const LatestNews = () => {
                 }`}
               >
                 <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.16em]">
-                  <span className={index === activeIndex ? 'text-accent-300' : 'text-white/55'}>
+                  <span className={index === activeIndex ? 'text-[#EEC709]' : 'text-white/55'}>
                     {blog.category}
                   </span>
                   <span className="text-white/40">{formatDate(blog.date)}</span>

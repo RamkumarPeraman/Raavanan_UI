@@ -54,7 +54,7 @@ const FoundationFooter = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={item.label}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/75 transition hover:border-accent-400/50 hover:bg-accent-400/10 hover:text-accent-300"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/75 transition hover:border-accent-400/50 hover:bg-accent-400/10 hover:text-[#EEC709]"
                   >
                     <item.icon className="h-5 w-5" />
                   </a>
@@ -63,7 +63,7 @@ const FoundationFooter = () => {
             </div>
 
             <div>
-              <h4 className="text-base font-semibold text-accent-300 md:text-lg">Quick Links</h4>
+              <h4 className="text-base font-semibold text-[#EEC709] md:text-lg">Quick Links</h4>
               <div className="mt-5 space-y-3">
                 {config.navigation.footer.quickLinks.map((link) => (
                   <Link key={link.path} to={link.path} className="block text-white/70 transition hover:text-white">
@@ -74,7 +74,7 @@ const FoundationFooter = () => {
             </div>
 
             <div>
-              <h4 className="text-base font-semibold text-accent-300 md:text-lg">Resources</h4>
+              <h4 className="text-base font-semibold text-[#EEC709] md:text-lg">Resources</h4>
               <div className="mt-5 space-y-3">
                 {config.navigation.footer.resources.map((link) => (
                   <Link key={link.path} to={link.path} className="block text-white/70 transition hover:text-white">
@@ -88,20 +88,20 @@ const FoundationFooter = () => {
             </div>
 
             <div>
-              <h4 className="text-base font-semibold text-accent-300 md:text-lg">Contact</h4>
+              <h4 className="text-base font-semibold text-[#EEC709] md:text-lg">Contact</h4>
               <div className="mt-5 space-y-4 text-white/70">
                 <div className="flex min-w-0 items-start gap-3">
-                  <FiMapPin className="mt-1 h-5 w-5 flex-shrink-0 text-accent-300" />
+                  <FiMapPin className="mt-1 h-5 w-5 flex-shrink-0 text-[#EEC709]" />
                   <a href={office.mapsUrl} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{office.address}</a>
                 </div>
                 <div className="flex min-w-0 items-start gap-3">
-                  <FiPhone className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-300" />
+                  <FiPhone className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EEC709]" />
                   <a href="tel:+919487814418" className="transition hover:text-white">
                     +91 94878 14418
                   </a>
                 </div>
                 <div className="flex min-w-0 items-start gap-3">
-                  <FiMail className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-300" />
+                  <FiMail className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EEC709]" />
                   <a
                     href="mailto:enquiry.raavanathalaigal@gmail.com"
                     className="min-w-0 break-all transition hover:text-white"

@@ -229,7 +229,7 @@ const FoundationHeroCarousel = () => {
           <div className="rounded-[2rem] bg-primary-950 p-6 text-white shadow-[0_28px_80px_-48px_rgba(8,38,40,0.7)] md:p-8">
             <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-300">Our focus</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#EEC709]">Our focus</p>
                 <h2 className="mt-2 text-2xl font-bold">Where we create impact</h2>
               </div>
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10"><FiAward size={24} /></div>

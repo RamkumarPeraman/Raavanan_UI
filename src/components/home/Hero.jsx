@@ -118,7 +118,7 @@ const Hero = () => {
 
               <div className="mt-6 rounded-[1.5rem] bg-primary-900 px-6 py-6 text-white">
                 <div className="flex items-center gap-3">
-                  <FiHeart className="h-5 w-5 text-accent-300" />
+                  <FiHeart className="h-5 w-5 text-[#EEC709]" />
                   <span className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
                     Community note
                   </span>

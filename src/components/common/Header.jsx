@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiBarChart2,
   FiChevronDown,
+  FiGlobe,
   FiHeart,
   FiLogOut,
   FiMenu,
@@ -18,6 +19,7 @@ import ravanaLogo from '../../asset/image/ravanan.png';
 import apiService from '../../services/api';
 import { pagePermissionByPath } from '../../constants/pageAccess';
 import { selectPermissions } from '../../store/accessStore';
+import { useSiteLanguage } from '../../hooks/useSiteLanguage';
 
 const normalizeRole = (role) => {
   if (typeof role !== 'string') return role;
@@ -37,11 +39,28 @@ const navigationItems = [
   { name: 'Publications', path: '/publications' },
 ];
 
+const tamilLabels = {
+  Home: 'முகப்பு',
+  Events: 'நிகழ்வுகள்',
+  Volunteer: 'தன்னார்வம்',
+  Publications: 'வெளியீடுகள்',
+  'Donate Now': 'நன்கொடை அளிக்க',
+  Login: 'உள்நுழைய',
+  'My Profile': 'என் சுயவிவரம்',
+  'Admin Dashboard': 'நிர்வாகப் பலகை',
+  'User Management': 'பயனர் மேலாண்மை',
+  'Roles Management': 'பொறுப்பு மேலாண்மை',
+  Logout: 'வெளியேறு',
+};
+
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const userMenuButtonRef = useRef(null);
+  const languageMenuRef = useRef(null);
+  const languageButtonRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -49,6 +68,8 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [language, changeLanguage] = useSiteLanguage();
+  const label = (english) => language === 'ta' ? tamilLabels[english] || english : english;
 
   useEffect(() => {
     if (!isMobileMenuOpen) return undefined;
@@ -94,6 +115,27 @@ const Header = () => {
     };
   }, [isUserMenuOpen]);
 
+  useEffect(() => {
+    if (!isLanguageMenuOpen) return undefined;
+    const closeOutside = (event) => {
+      if (!languageMenuRef.current?.contains(event.target)) setIsLanguageMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsLanguageMenuOpen(false);
+        languageButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('focusin', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('focusin', closeOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isLanguageMenuOpen]);
+
   const syncAuthState = () => {
     const token = localStorage.getItem('authToken');
     const userData = localStorage.getItem('user');
@@ -137,6 +179,7 @@ const Header = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsUserMenuOpen(false);
+    setIsLanguageMenuOpen(false);
     syncAuthState();
   }, [location]);
 
@@ -168,6 +211,7 @@ const Header = () => {
             type="button"
             onClick={() => {
               setIsUserMenuOpen(false);
+              setIsLanguageMenuOpen(false);
               setIsMobileMenuOpen((open) => !open);
             }}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white transition-colors hover:bg-white/10 md:hidden"
@@ -184,7 +228,7 @@ const Header = () => {
             </div>
             <span className="min-w-0 leading-tight">
               <span className="block max-w-[8rem] truncate text-sm font-bold tracking-tight text-white sm:max-w-[11rem] sm:text-base lg:max-w-none lg:text-lg">Raavana Thalaigal</span>
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.34em] text-[#efc16f]">Trust</span>
+              <span className="block text-[8px] md:text-[10.4px] font-semibold uppercase tracking-[0.34em] text-[#EEC709]">Trust-TamilNadu</span>
             </span>
           </Link>
 
@@ -195,11 +239,11 @@ const Header = () => {
                 to={item.path}
                 className={`relative flex h-full items-center px-2 text-sm font-semibold transition-colors after:absolute after:bottom-2 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:transition-opacity lg:px-3 lg:after:left-3 lg:after:right-3 ${
                   isActive(item.path)
-                    ? 'text-[#f4cb87] after:bg-[#f4a94f] after:opacity-100'
-                    : 'text-white/75 after:bg-[#f4a94f] after:opacity-0 hover:text-white hover:after:opacity-80'
+                    ? 'text-[#EEC709] after:bg-[#EEC709] after:opacity-100'
+                    : 'text-white/75 after:bg-[#EEC709] after:opacity-0 hover:text-white hover:after:opacity-80'
                 }`}
               >
-                {item.name}
+                {label(item.name)}
               </Link>
             ))}
           </nav>
@@ -207,19 +251,47 @@ const Header = () => {
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-2 lg:ml-3">
             {canOpenPage('/donate') && <Link
               to="/donate"
-              className="flex h-10 items-center justify-center rounded-lg bg-[#f1ad55] px-3 font-bold text-[#123537] shadow-[0_4px_0_#bd702f] transition-all hover:-translate-y-0.5 hover:bg-[#ffc174] md:px-5"
-              aria-label="Donate now"
+              className="flex h-10 items-center justify-center rounded-lg bg-[#EEC709] px-3 font-bold text-[#123537] shadow-[0_4px_0_#bd702f] transition-all hover:-translate-y-0.5 hover:bg-[#EEC702] md:px-5"
+              aria-label={label('Donate Now')}
             >
               <FiHeart className="lg:hidden" size={19} />
-              <span className="hidden lg:inline">Donate Now</span>
+              <span className="hidden lg:inline">{label('Donate Now')}</span>
             </Link>}
+
+            <div ref={languageMenuRef} className="relative">
+              <button
+                ref={languageButtonRef}
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setIsLanguageMenuOpen((open) => !open);
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+                aria-label={language === 'ta' ? 'மொழியைத் தேர்ந்தெடுக்கவும்' : 'Choose language'}
+                aria-expanded={isLanguageMenuOpen}
+                aria-controls="site-language-options"
+                title={language === 'ta' ? 'மொழி' : 'Language'}
+              >
+                <FiGlobe size={20} aria-hidden="true" />
+              </button>
+              {isLanguageMenuOpen && (
+                <div id="site-language-options" className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-[#e4ddd2] bg-white py-2 text-ink-900 shadow-2xl">
+                  <p className="px-4 pb-2 text-xs font-bold uppercase tracking-wide text-ink-500">{language === 'ta' ? 'மொழி' : 'Language'}</p>
+                  {[{ code: 'en', name: 'English' }, { code: 'ta', name: 'தமிழ்' }].map((option) => (
+                    <button key={option.code} type="button" lang={option.code} aria-pressed={language === option.code} onClick={() => { changeLanguage(option.code); setIsLanguageMenuOpen(false); languageButtonRef.current?.focus(); }} className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm font-semibold transition-colors hover:bg-primary-50 ${language === option.code ? 'text-primary-800' : 'text-ink-700'}`}>
+                      {option.name}<span aria-hidden="true">{language === option.code ? '✓' : ''}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {isLoggedIn ? (
               <div ref={userMenuRef} className="relative">
                 <button
                   ref={userMenuButtonRef}
                   type="button"
-                  onClick={() => setIsUserMenuOpen((open) => !open)}
+                  onClick={() => { setIsLanguageMenuOpen(false); setIsUserMenuOpen((open) => !open); }}
                   className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-1 transition-colors hover:bg-white/10"
                   aria-label={isUserMenuOpen ? 'Close account menu' : 'Open account menu'}
                   aria-expanded={isUserMenuOpen}
@@ -240,18 +312,18 @@ const Header = () => {
 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white py-2 shadow-2xl">
-                    {canOpenPage('/profile') && <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />My Profile</Link>}
+                    {canOpenPage('/profile') && <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />{label('My Profile')}</Link>}
 
                     {(isAdmin || canViewUsers || canViewRoles) && (
                       <div className="mt-1 border-t border-gray-100 pt-1">
-                        {isAdmin && canOpenPage('/admin') && <Link to="/admin" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />Admin Dashboard</Link>}
-                        {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />User Management</Link>}
-                        {canViewRoles && canOpenPage('/roles') && <Link to="/roles" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />Roles Management</Link>}
+                        {isAdmin && canOpenPage('/admin') && <Link to="/admin" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />{label('Admin Dashboard')}</Link>}
+                        {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />{label('User Management')}</Link>}
+                        {canViewRoles && canOpenPage('/roles') && <Link to="/roles" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />{label('Roles Management')}</Link>}
                       </div>
                     )}
 
                     <div className="mt-1 border-t border-gray-100 pt-1">
-                      <button type="button" onClick={handleLogout} className="flex w-full items-center px-4 py-2.5 text-red-600 hover:bg-red-50"><FiLogOut className="mr-3" />Logout</button>
+                      <button type="button" onClick={handleLogout} className="flex w-full items-center px-4 py-2.5 text-red-600 hover:bg-red-50"><FiLogOut className="mr-3" />{label('Logout')}</button>
                     </div>
                   </div>
                 )}
@@ -259,7 +331,7 @@ const Header = () => {
             ) : (
               <Link to="/login" className="flex h-10 items-center gap-1 rounded-lg border border-white/15 px-2 text-white transition-colors hover:bg-white/10 sm:px-3">
                 <FiUser size={18} />
-                <span className="hidden lg:inline">Login</span>
+                <span className="hidden lg:inline">{label('Login')}</span>
               </Link>
             )}
           </div>
@@ -287,7 +359,7 @@ const Header = () => {
                   : 'text-white/80 hover:bg-white/10 hover:text-white'
               }`}
             >
-              {item.name}
+              {label(item.name)}
             </Link>
           ))}
         </nav>
