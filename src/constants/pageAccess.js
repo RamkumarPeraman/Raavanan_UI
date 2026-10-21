@@ -13,6 +13,7 @@ export const pageGroups = [
   { label: 'Management pages', pages: [
     ['User Management', '/my-groups', 'my_groups'], ['Admin Dashboard', '/admin', 'admin'],
     ['Roles Management', '/roles', 'roles'], ['Wings & Departments', '/wings', 'wings'],
+    ['Project Forms', '/project-forms', 'project_forms'],
   ] },
 ];
 

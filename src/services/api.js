@@ -883,6 +883,13 @@ const apiService = {
     try { return (await api.delete(`/wings/sub-wings/${id}`)).data; } catch (error) { throwApiError(error); }
   },
 
+  getProjectSubmissions: async (kind) => {
+    try { return (await api.get('/project-submissions', { params: { kind } })).data; } catch (error) { throwApiError(error); }
+  },
+  createProjectSubmission: async (data) => {
+    try { return (await api.post('/project-submissions', data)).data; } catch (error) { throwApiError(error); }
+  },
+
   getMerchandise: async () => {
     try {
       const response = await api.get('/merchandise');

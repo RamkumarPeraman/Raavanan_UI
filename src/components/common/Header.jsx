@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiBarChart2,
   FiChevronDown,
+  FiClipboard,
   FiGlobe,
   FiHeart,
   FiLayers,
@@ -184,6 +185,7 @@ const Header = () => {
   const canViewUsers = isAdmin || permissions.includes('users:read');
   const canViewRoles = isAdmin || permissions.includes('roles:read');
   const canViewWings = isAdmin || permissions.includes('page:wings');
+  const canViewProjectForms = isAdmin || permissions.includes('page:project_forms');
   const canOpenPage = path => !isLoggedIn || permissions.includes(pagePermissionByPath[path]);
   const isActive = (path) => location.pathname === path;
 
@@ -304,12 +306,13 @@ const Header = () => {
                   <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white py-2 shadow-2xl">
                     {canOpenPage('/profile') && <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50"><FiUser className="mr-3" />{label('My Profile')}</Link>}
 
-                    {(isAdmin || canViewUsers || canViewRoles || canViewWings) && (
+                    {(isAdmin || canViewUsers || canViewRoles || canViewWings || canViewProjectForms) && (
                       <div className="mt-1 border-t border-gray-100 pt-1">
                         {isAdmin && canOpenPage('/admin') && <Link to="/admin" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiBarChart2 className="mr-3" />{label('Admin Dashboard')}</Link>}
                         {canViewUsers && canOpenPage('/my-groups') && <Link to="/my-groups" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiUsers className="mr-3" />{label('User Management')}</Link>}
                         {canViewRoles && canOpenPage('/roles') && <Link to="/roles" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiShield className="mr-3" />{label('Roles Management')}</Link>}
                         {canViewWings && canOpenPage('/wings') && <Link to="/wings" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiLayers className="mr-3" />{label('Wings & Departments')}</Link>}
+                        {canViewProjectForms && canOpenPage('/project-forms') && <Link to="/project-forms" onClick={() => setIsUserMenuOpen(false)} className="flex items-center px-4 py-2.5 text-purple-700 hover:bg-purple-50"><FiClipboard className="mr-3" />{label('Project Forms')}</Link>}
                       </div>
                     )}
 

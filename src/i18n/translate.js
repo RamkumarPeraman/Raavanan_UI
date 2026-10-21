@@ -7,7 +7,7 @@ const pageByPath = {
   '/signup': 'signup', '/forgot-password': 'forgotPassword', '/verify-signup': 'verifySignup',
   '/profile': 'profile', '/my-impact': 'myImpact', '/messages': 'messages',
   '/notifications': 'notifications', '/settings': 'settings', '/my-groups': 'userGroups',
-  '/admin': 'admin', '/roles': 'roles', '/wings': 'wings',
+  '/admin': 'admin', '/roles': 'roles', '/wings': 'wings', '/project-forms': 'projectForms',
 };
 
 export const pageNameForPath = (pathname) => pageByPath[pathname] || 'common';

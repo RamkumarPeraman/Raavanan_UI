@@ -35,6 +35,7 @@ import MyImpactPage from './pages/MyImpactPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import RolesManagementPage from './pages/RolesManagementPage';
 import WingsPage from './pages/WingsPage';
+import ProjectFormsPage from './pages/ProjectFormsPage';
 import OurStoryPage from './pages/OurStoryPage';
 import KeyFiguresPage from './pages/KeyFiguresPage';
 
@@ -50,17 +51,17 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/wings', '/events', '/volunteer'].includes(location.pathname);
+  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/wings', '/project-forms', '/events', '/volunteer'].includes(location.pathname);
   const isScrollablePage = ['/', '/contact', '/donate', '/profile', '/our-story', '/key-figures', '/reports', '/blogs', '/publications'].includes(location.pathname) || location.pathname.startsWith('/projects');
   const isViewportPage = isFullHeightPage || isScrollablePage;
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/wings', '/events', '/volunteer', '/donate'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/wings', '/project-forms', '/events', '/volunteer', '/donate'].includes(location.pathname);
 
   return (
     <div className={isViewportPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
       <ScrollToTop />
       <Header />
       <div className={isViewportPage ? 'flex h-full w-full flex-col overflow-hidden' : 'flex min-h-screen w-full flex-col'}>
-        <main key={location.pathname} className={['/volunteer', '/events'].includes(location.pathname) ? 'mt-14 min-h-0 flex-1 overflow-hidden md:mt-[3.75rem]' : isScrollablePage ? `${['/donate', '/profile'].includes(location.pathname) ? 'admin-table-scroll ' : ''}mt-14 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[3.75rem]` : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
+        <main key={location.pathname} className={['/volunteer', '/events', '/project-forms'].includes(location.pathname) ? 'mt-14 min-h-0 flex-1 overflow-hidden md:mt-[3.75rem]' : isScrollablePage ? `${['/donate', '/profile'].includes(location.pathname) ? 'admin-table-scroll ' : ''}mt-14 min-h-0 flex-1 overflow-y-auto overscroll-contain md:mt-[3.75rem]` : isFullHeightPage ? 'min-h-0 flex-1 overflow-hidden' : 'flex-grow'}>
           <PageAccessGate key={location.pathname} pathname={location.pathname}>
           <Routes>
           {/* Public Routes */}
@@ -127,6 +128,11 @@ function AppLayout() {
           <Route path="/wings" element={
             <ProtectedRoute requiredPermission="page:wings">
               <WingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/project-forms" element={
+            <ProtectedRoute requiredPermission="page:project_forms">
+              <ProjectFormsPage />
             </ProtectedRoute>
           } />
           </Routes>
