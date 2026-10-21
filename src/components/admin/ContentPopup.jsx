@@ -17,25 +17,6 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
   // Form configuration based on content type
   const getFormConfig = () => {
     const configs = {
-      project: {
-        title: item ? 'Edit Project' : 'Add New Project',
-        fields: [
-          { name: 'title', label: 'Project Title', type: 'text', required: true, col: 'full' },
-          { name: 'category', label: 'Category', type: 'select', required: true, col: 'half',
-            options: ['Education', 'Healthcare', 'Women Empowerment', 'Environment', 'Child Welfare', 'Skill Development'] },
-          { name: 'status', label: 'Status', type: 'select', required: true, col: 'half',
-            options: ['ongoing', 'completed', 'planned'] },
-          { name: 'description', label: 'Short Description', type: 'textarea', required: true, col: 'full', rows: 3 },
-          { name: 'longDescription', label: 'Full Description', type: 'textarea', required: true, col: 'full', rows: 5 },
-          { name: 'location', label: 'Location', type: 'text', col: 'half' },
-          { name: 'startDate', label: 'Start Date', type: 'date', col: 'half' },
-          { name: 'endDate', label: 'End Date', type: 'date', col: 'half' },
-          { name: 'goal', label: 'Funding Goal (₹)', type: 'number', col: 'half' },
-          { name: 'raised', label: 'Amount Raised (₹)', type: 'number', col: 'half' },
-          { name: 'progress', label: 'Progress %', type: 'number', col: 'half', min: 0, max: 100 },
-          { name: 'impact', label: 'Impact Metrics', type: 'keyvalue', col: 'full' }
-        ]
-      },
       event: {
         title: item ? 'Edit Event' : 'Add New Event',
         fields: [
@@ -120,7 +101,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
         ]
       }
     };
-    return configs[type] || configs.project;
+    return configs[type] || configs.event;
   };
 
   useEffect(() => {
@@ -262,7 +243,7 @@ const ContentPopup = ({ type, item, onClose, onSave }) => {
           </div>
       )}>
           {/* Image Upload */}
-          {(type === 'project' || type === 'event' || type === 'blog' || type === 'team') && (
+          {(type === 'event' || type === 'blog' || type === 'team') && (
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">Featured Image</label>
               <div className="flex items-center space-x-4">

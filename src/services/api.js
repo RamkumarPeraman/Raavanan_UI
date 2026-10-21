@@ -183,7 +183,6 @@ api.interceptors.response.use(
 const apiService = {
   getAdminContentPage: async (type, params = {}) => {
     const paths = {
-      projects: '/projects',
       events: '/events',
       blogs: '/blogs',
       reports: '/reports',
@@ -197,9 +196,8 @@ const apiService = {
       const response = await api.get(path, {
         params: { ...params, ...(type === 'volunteer' ? { includeInactive: true } : {}) },
       });
-      const normalize = type === 'projects' ? normalizeProject : normalizeEntity;
       return {
-        items: extractListData(response.data).map(normalize),
+        items: extractListData(response.data).map(normalizeEntity),
         totalRowCount: response.data?.totalRowCount,
       };
     } catch (error) {
@@ -502,21 +500,6 @@ const apiService = {
     } catch (error) {
       throwApiError(error);
     }
-  },
-
-  createProjectAdmin: async (projectData) => {
-    const response = await api.post('/projects', projectData);
-    return response.data?.data || response.data;
-  },
-
-  updateProjectAdmin: async (id, projectData) => {
-    const response = await api.put(`/projects/${id}`, projectData);
-    return response.data?.data || response.data;
-  },
-
-  deleteProjectAdmin: async (id) => {
-    const response = await api.delete(`/projects/${id}`);
-    return response.data;
   },
 
   createEventAdmin: async (eventData) => {
@@ -883,11 +866,20 @@ const apiService = {
     try { return (await api.delete(`/wings/sub-wings/${id}`)).data; } catch (error) { throwApiError(error); }
   },
 
-  getProjectSubmissions: async (kind) => {
-    try { return (await api.get('/project-submissions', { params: { kind } })).data; } catch (error) { throwApiError(error); }
+  getProjectSubmissions: async (kind, params = {}) => {
+    try { return (await api.get('/project-submissions', { params: { kind, ...params } })).data; } catch (error) { throwApiError(error); }
   },
   createProjectSubmission: async (data) => {
     try { return (await api.post('/project-submissions', data)).data; } catch (error) { throwApiError(error); }
+  },
+  updateProjectSubmission: async (id, data) => {
+    try { return (await api.put(`/project-submissions/${id}`, data)).data; } catch (error) { throwApiError(error); }
+  },
+  reviewProjectSubmission: async (id, status) => {
+    try { return (await api.patch(`/project-submissions/${id}/status`, { status })).data; } catch (error) { throwApiError(error); }
+  },
+  deleteProjectSubmission: async (id) => {
+    try { return (await api.delete(`/project-submissions/${id}`)).data; } catch (error) { throwApiError(error); }
   },
 
   getMerchandise: async () => {

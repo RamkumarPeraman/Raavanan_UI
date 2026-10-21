@@ -14,12 +14,13 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import ContentPopup from '../../../components/admin/ContentPopup';
 import PaymentSettingsPanel from '../../../components/admin/PaymentSettingsPanel';
+import ProjectSubmissionsPanel from '../../../components/admin/ProjectSubmissionsPanel';
 import Pagination from '../../../components/common/Pagination';
 import apiService, { defaultBankDetails, defaultHeroNewsCarousel } from '../../../services/api';
 
 const contentTypes = [
   { id: 'donations', label: 'Donations', icon: FaRupeeSign, popupType: null },
-  { id: 'projects', label: 'Projects', icon: FiBriefcase, popupType: 'project' },
+  { id: 'projects', label: 'Projects', icon: FiBriefcase, popupType: null },
   { id: 'events', label: 'Events', icon: FiCalendar, popupType: 'event' },
   { id: 'blogs', label: 'Blogs', icon: FiEdit3, popupType: 'blog' },
   { id: 'reports', label: 'Reports & Publications', icon: FiBookOpen, popupType: 'report' },
@@ -30,7 +31,6 @@ const contentTypes = [
 ];
 
 const tableColumns = {
-  projects: ['title', 'category', 'status', 'location', 'progress', 'goal', 'raised'],
   events: ['title', 'type', 'date', 'location', 'capacity', 'registered'],
   blogs: ['title', 'category', 'author', 'date', 'readTime'],
   reports: ['title', 'type', 'year', 'publishedDate', 'pages', 'status'],
@@ -363,7 +363,7 @@ const parseVolunteerFieldValue = (rawValue, sourceValue, key) => {
 const AdminDashboardPage = () => {
   const [activeTab, setActiveTab] = useState('donations');
   const [itemsByType, setItemsByType] = useState({
-    projects: [], events: [], blogs: [], reports: [],
+    events: [], blogs: [], reports: [],
     volunteer: [], volunteerApplications: [], donations: [],
   });
   const [loading, setLoading] = useState(true);
@@ -438,7 +438,7 @@ const AdminDashboardPage = () => {
   }, [refreshKey]);
 
   useEffect(() => {
-    if (activeTab === 'donationSettings' || activeTab === 'homepageCarousel') return undefined;
+    if (activeTab === 'donationSettings' || activeTab === 'homepageCarousel' || activeTab === 'projects') return undefined;
     let cancelled = false;
     setLoading(true);
     const params = { page, pageSize, search: debouncedSearch || undefined };
@@ -582,26 +582,13 @@ const AdminDashboardPage = () => {
     }
   };
 
-  const popupType = contentTypes.find((type) => type.id === activeTab)?.popupType || 'project';
+  const popupType = contentTypes.find((type) => type.id === activeTab)?.popupType || 'event';
   const items = useMemo(() => itemsByType[activeTab] || [], [itemsByType, activeTab]);
 
   const filteredItems = items;
   const refreshContent = () => setRefreshKey((key) => key + 1);
 
   const normalizePayload = (type, item) => {
-    if (type === 'project') {
-      return {
-        ...item,
-        progress: Number(item.progress || 0),
-        goal: Number(item.goal || 0),
-        raised: Number(item.raised || 0),
-        livesImpacted: Number(item.livesImpacted || 0),
-        volunteersEngaged: Number(item.volunteersEngaged || 0),
-        impact: Object.fromEntries(
-          Object.entries(item.impact || {}).filter(([key]) => key).map(([key, value]) => [key, Number(value || 0)])
-        ),
-      };
-    }
     if (type === 'event') return { ...item, capacity: Number(item.capacity || 0), registered: Number(item.registered || 0), price: Number(item.price || 0) };
     if (type === 'blog') return { ...item, readTime: Number(item.readTime || 1) };
     if (type === 'volunteer') return { ...item, spots: Number(item.spots || 1), status: item.status || 'active' };
@@ -690,8 +677,7 @@ const AdminDashboardPage = () => {
     const label = popupType === 'volunteer' ? 'volunteer opportunity' : popupType;
     if (!window.confirm(`Are you sure you want to delete this ${label}?`)) return;
     try {
-      if (activeTab === 'projects') await apiService.deleteProjectAdmin(item.id);
-      else if (activeTab === 'events') await apiService.deleteEventAdmin(item.id);
+      if (activeTab === 'events') await apiService.deleteEventAdmin(item.id);
       else if (activeTab === 'blogs') await apiService.deleteBlogAdmin(item.id);
       else if (activeTab === 'reports') await apiService.deleteReportAdmin(item.id);
       else if (activeTab === 'volunteer') await apiService.deleteVolunteerOpportunityAdmin(item.id);
@@ -876,8 +862,7 @@ const AdminDashboardPage = () => {
     try {
       const payload = normalizePayload(popupType, newItem);
       let savedItem;
-      if (activeTab === 'projects') savedItem = selectedItem ? await apiService.updateProjectAdmin(selectedItem.id, payload) : await apiService.createProjectAdmin(payload);
-      else if (activeTab === 'events') savedItem = selectedItem ? await apiService.updateEventAdmin(selectedItem.id, payload) : await apiService.createEventAdmin(payload);
+      if (activeTab === 'events') savedItem = selectedItem ? await apiService.updateEventAdmin(selectedItem.id, payload) : await apiService.createEventAdmin(payload);
       else if (activeTab === 'blogs') savedItem = selectedItem ? await apiService.updateBlogAdmin(selectedItem.id, payload) : await apiService.createBlogAdmin(payload);
       else if (activeTab === 'reports') savedItem = selectedItem ? await apiService.updateReportAdmin(selectedItem.id, payload) : await apiService.createReportAdmin(payload);
       else if (activeTab === 'volunteer') savedItem = selectedItem ? await apiService.updateVolunteerOpportunityAdmin(selectedItem.id, payload) : await apiService.createVolunteerOpportunityAdmin(payload);
@@ -994,7 +979,7 @@ const AdminDashboardPage = () => {
     return value || '-';
   };
 
-  const isSpecialTab = ['volunteerApplications', 'donations', 'donationSettings', 'homepageCarousel'].includes(activeTab);
+  const isSpecialTab = ['projects', 'volunteerApplications', 'donations', 'donationSettings', 'homepageCarousel'].includes(activeTab);
   const previewSlideIndex = heroCarouselSlides.findIndex((slide) => slide.id === previewSlideId);
   const previewSlide = previewSlideIndex >= 0 ? heroCarouselSlides[previewSlideIndex] : null;
   const selectedVolunteerFields = selectedVolunteer ? getVolunteerFieldList(selectedVolunteer) : [];
@@ -1022,7 +1007,7 @@ const AdminDashboardPage = () => {
         >
           <type.icon aria-hidden="true" className="h-4 w-4 shrink-0" />
           {activeTab === type.id && <span>{type.label}</span>}
-          {activeTab === type.id && type.id !== 'donationSettings' && (
+          {activeTab === type.id && !['donationSettings', 'projects'].includes(type.id) && (
             <span className="rounded bg-white/20 px-1.5 py-0.5 text-[11px] leading-none text-white">
               {type.id === 'homepageCarousel' ? heroCarouselSlides.length : totalsByType[type.id] || 0}
             </span>
@@ -1339,6 +1324,15 @@ const AdminDashboardPage = () => {
         )}
       </div>
     );
+  }
+
+  if (activeTab === 'projects') {
+    return <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50 pt-20">
+      <div className="flex min-h-0 w-full flex-1 flex-col px-[5px]">
+        {renderDashboardTabs(false)}
+        <ProjectSubmissionsPanel />
+      </div>
+    </div>;
   }
 
   const renderRecordActions = (item) => (<> {activeTab === 'volunteerApplications' ? (
