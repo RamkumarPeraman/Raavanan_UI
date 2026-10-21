@@ -9,7 +9,8 @@ import apiService from '../../services/api';
 import { refreshAccess } from '../../store/accessStore';
 import { accountFlowPages, pageGroups, pagePermissions } from '../../constants/pageAccess';
 
-const isProtectedRole = role => role.isSystem || ['super_admin', 'admin', 'member'].includes(role.name?.toLowerCase());
+const isSystemRole = role => Boolean(role.isSystem);
+const isUndeletableRole = role => role.name?.toLowerCase() === 'super_admin';
 
 const RolesManagementPage = () => {
   const dispatch = useDispatch();
@@ -85,6 +86,7 @@ const RolesManagementPage = () => {
   };
 
   const handleDeleteRole = async () => {
+    if (!deleteTarget || isUndeletableRole(deleteTarget)) return;
     setDeletingId(deleteTarget.id);
     try {
       await apiService.deleteRole(deleteTarget.id);
@@ -181,14 +183,14 @@ const RolesManagementPage = () => {
                   <tr key={role.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3">
                       <div className="flex min-w-0 items-center gap-2">
-                        <FiShield className={`shrink-0 ${isProtectedRole(role) ? 'text-purple-500' : 'text-gray-400'}`} />
+                        <FiShield className={`shrink-0 ${isSystemRole(role) ? 'text-purple-500' : 'text-gray-400'}`} />
                         <span className="truncate font-medium text-gray-900" title={role.displayName || formatRoleName(role.name)}>{role.displayName || formatRoleName(role.name)}</span>
                       </div>
                     </td>
                     <td className="truncate px-3 py-3 text-gray-500" title={role.description || ''}>{role.description || '—'}</td>
                     <td className="whitespace-nowrap px-3 py-3 text-gray-500">{role.permissions?.length || 0} permissions</td>
                     <td className="px-3 py-3">
-                      {isProtectedRole(role) ? (
+                      {isSystemRole(role) ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">System</span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Custom</span>
@@ -197,16 +199,17 @@ const RolesManagementPage = () => {
                     {canManage && (
                       <td className="whitespace-nowrap px-3 py-3 text-right">
                         <button onClick={() => openEditRole(role)} disabled={submitting} data-tooltip="Edit role" className="rounded p-2 text-blue-700 hover:bg-blue-50 disabled:opacity-40" aria-label={`Edit ${role.displayName || role.name}`}><FiEdit2 size={16} /></button>
-                        {!isProtectedRole(role) && (
+                        <span data-tooltip={isUndeletableRole(role) ? 'Super Admin cannot be deleted' : 'Delete role'} className="inline-flex">
                           <button
+                            type="button"
                             onClick={() => setDeleteTarget(role)}
-                            disabled={Boolean(deletingId)}
-                            className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1 rounded hover:bg-red-50 transition-colors"
-                            data-tooltip="Delete role" aria-label="Delete role"
+                            disabled={isUndeletableRole(role) || Boolean(deletingId)}
+                            className="rounded p-2 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-transparent"
+                            aria-label={`Delete ${role.displayName || role.name}`}
                           >
                             <FiTrash2 size={16} />
                           </button>
-                        )}
+                        </span>
                       </td>
                     )}
                   </tr>
@@ -216,9 +219,9 @@ const RolesManagementPage = () => {
           </div>
           <div className="admin-table-scroll min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2 lg:hidden">
             {visibleRoles.map(role => <article key={role.id} className="rounded-lg border bg-white p-3 text-sm">
-              <div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-center gap-2 font-semibold text-gray-900"><FiShield className="shrink-0 text-primary-600" /><span className="min-w-0 break-words">{role.displayName || formatRoleName(role.name)}</span></div><span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${isProtectedRole(role) ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>{isProtectedRole(role) ? 'System' : 'Custom'}</span></div>
+              <div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-center gap-2 font-semibold text-gray-900"><FiShield className="shrink-0 text-primary-600" /><span className="min-w-0 break-words">{role.displayName || formatRoleName(role.name)}</span></div><span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${isSystemRole(role) ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>{isSystemRole(role) ? 'System' : 'Custom'}</span></div>
               <p className="mt-2 text-gray-600">{role.description || 'No description'}</p>
-              <div className="mt-2 flex items-center justify-between border-t pt-2 text-xs text-gray-500"><span>{role.permissions?.length || 0} permissions</span>{canManage && <div className="flex items-center gap-1"><button onClick={() => openEditRole(role)} disabled={submitting} data-tooltip="Edit role" className="rounded p-2 text-blue-700 hover:bg-blue-50 disabled:opacity-40" aria-label={`Edit ${role.displayName || role.name}`}><FiEdit2 size={16} /></button>{!isProtectedRole(role) && <button onClick={() => setDeleteTarget(role)} disabled={Boolean(deletingId)} data-tooltip="Delete role" className="rounded p-2 text-red-600 hover:bg-red-50 disabled:opacity-40" aria-label={`Delete ${role.displayName || role.name}`}><FiTrash2 size={16} /></button>}</div>}</div>
+              <div className="mt-2 flex items-center justify-between border-t pt-2 text-xs text-gray-500"><span>{role.permissions?.length || 0} permissions</span>{canManage && <div className="flex items-center gap-1"><button onClick={() => openEditRole(role)} disabled={submitting} data-tooltip="Edit role" className="rounded p-2 text-blue-700 hover:bg-blue-50 disabled:opacity-40" aria-label={`Edit ${role.displayName || role.name}`}><FiEdit2 size={16} /></button><span data-tooltip={isUndeletableRole(role) ? 'Super Admin cannot be deleted' : 'Delete role'} className="inline-flex"><button type="button" onClick={() => setDeleteTarget(role)} disabled={isUndeletableRole(role) || Boolean(deletingId)} className="rounded p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-transparent" aria-label={`Delete ${role.displayName || role.name}`}><FiTrash2 size={16} /></button></span></div>}</div>
             </article>)}
           </div>
         </>}

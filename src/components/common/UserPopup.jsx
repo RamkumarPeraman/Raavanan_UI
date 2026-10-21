@@ -16,7 +16,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     email: '',
     phone: '',
     password: '',
-    role: 'member',
+    role: canAssignRoles ? '' : 'member',
     department: '',
     status: 'active',
     location: '',
@@ -196,7 +196,8 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     if (mode === 'view') return;
 
     // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.role || !formData.department) {
+      setActiveTab('basic');
       alert('Please fill in all required fields');
       return;
     }
@@ -360,7 +361,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
+                      Phone Number
                     </label>
                     {isViewMode ? (
                       <p className="text-gray-900">{formData.phone || 'Not specified'}</p>
@@ -396,7 +397,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Role
+                      Role <span className="text-red-500">*</span>
                     </label>
                     {isViewMode ? (
                       <div className="flex items-center">
@@ -410,7 +411,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
                         )}
                       </div>
                     ) : canAssignRoles ? (
-                      <CommonSelect name="role" label="role" value={formData.role || ''} onChange={value => handleInputChange({ target: { name: 'role', value } })} options={availableRoles.map(r => ({ value: r.name.toLowerCase(), label: r.name.replace(/_/g, ' ') }))} />
+                      <CommonSelect name="role" label="role" value={formData.role || ''} onChange={value => handleInputChange({ target: { name: 'role', value } })} options={[{ value: '', label: 'Select Role' }, ...(availableRoles.length ? availableRoles.map(r => ({ value: r.name.toLowerCase(), label: r.displayName || r.name.replace(/_/g, ' ') })) : Object.entries(roles).map(([value, role]) => ({ value, label: role.name })))]} />
                     ) : (
                       <div className="rounded border bg-gray-50 px-3 py-2 text-gray-700">{availableRoles.find(r => r.name === formData.role)?.displayName || formData.role}</div>
                     )}
@@ -418,7 +419,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Department
+                      Department <span className="text-red-500">*</span>
                     </label>
                     {isViewMode ? (
                       <p className="text-gray-900">{formData.department || 'Not assigned'}</p>
