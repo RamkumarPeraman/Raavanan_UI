@@ -34,6 +34,7 @@ import MessengerPage from './pages/MessengerPage';
 import MyImpactPage from './pages/MyImpactPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import RolesManagementPage from './pages/RolesManagementPage';
+import WingsPage from './pages/WingsPage';
 import OurStoryPage from './pages/OurStoryPage';
 import KeyFiguresPage from './pages/KeyFiguresPage';
 
@@ -49,10 +50,10 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/events', '/volunteer'].includes(location.pathname);
+  const isFullHeightPage = ['/admin', '/my-groups', '/roles', '/wings', '/events', '/volunteer'].includes(location.pathname);
   const isScrollablePage = ['/', '/contact', '/donate', '/profile', '/our-story', '/key-figures', '/reports', '/blogs', '/publications'].includes(location.pathname) || location.pathname.startsWith('/projects');
   const isViewportPage = isFullHeightPage || isScrollablePage;
-  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/events', '/volunteer', '/donate'].includes(location.pathname);
+  const hideFooter = ['/login', '/forgot-password', '/verify-signup', '/messages', '/admin', '/profile', '/my-groups', '/roles', '/wings', '/events', '/volunteer', '/donate'].includes(location.pathname);
 
   return (
     <div className={isViewportPage ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}>
@@ -121,6 +122,11 @@ function AppLayout() {
           <Route path="/roles" element={
             <ProtectedRoute requiredPermission="roles:read">
               <RolesManagementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/wings" element={
+            <ProtectedRoute requiredPermission="page:wings">
+              <WingsPage />
             </ProtectedRoute>
           } />
           </Routes>

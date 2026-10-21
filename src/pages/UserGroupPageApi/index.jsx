@@ -21,8 +21,6 @@ const roles = {
   donor: { name: 'Donor' },
 };
 
-const departments = ['all', 'Administration', 'Education', 'Healthcare', 'Women Empowerment', 'Environment', 'Fundraising', 'Communications', 'HR', 'Finance', 'Events', 'Field Operations', 'Volunteer Management'];
-
 const normalizeRole = (role) => {
   if (typeof role !== 'string') {
     return role;
@@ -78,6 +76,19 @@ const UserGroupPageApi = () => {
     fetchRoles();
   }, []);
   const [users, setUsers] = useState([]);
+  const [configuredDepartments, setConfiguredDepartments] = useState([]);
+  useEffect(() => {
+    let active = true;
+    apiService.getWings()
+      .then(async response => {
+        const wings = Array.isArray(response?.data) ? response.data : [];
+        const results = await Promise.all(wings.map(wing => apiService.getSubWings(wing.id)));
+        if (active) setConfiguredDepartments(results.flatMap(result => Array.isArray(result?.data) ? result.data.map(department => department.name) : []));
+      })
+      .catch(() => { if (active) setConfiguredDepartments([]); });
+    return () => { active = false; };
+  }, []);
+  const departments = useMemo(() => ['all', ...new Set([...configuredDepartments, ...users.map(user => user.department).filter(Boolean)])].sort((a, b) => a === 'all' ? -1 : b === 'all' ? 1 : a.localeCompare(b)), [configuredDepartments, users]);
   const requestIdRef = useRef(0);
   const [stats, setStats] = useState({ total: 0, active: 0, leadership: 0, volunteers: 0, members: 0 });
   const [loading, setLoading] = useState(true);

@@ -18,6 +18,8 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     password: '',
     role: canAssignRoles ? '' : 'member',
     department: '',
+    wingId: '',
+    departmentId: '',
     status: 'active',
     location: '',
     bio: '',
@@ -47,6 +49,10 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
   const [previewUrl, setPreviewUrl] = useState(null);
   const [imageError, setImageError] = useState('');
   const [availableRoles, setAvailableRoles] = useState([]);
+  const [wings, setWings] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [departmentLoading, setDepartmentLoading] = useState(false);
+  const [departmentError, setDepartmentError] = useState('');
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -61,6 +67,30 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     fetchRoles();
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    apiService.getWings()
+      .then(response => { if (active) setWings(Array.isArray(response?.data) ? response.data : []); })
+      .catch(() => { if (active) setDepartmentError('Could not load wings.'); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!formData.wingId) {
+      setDepartments([]);
+      return;
+    }
+    let active = true;
+    setDepartments([]);
+    setDepartmentLoading(true);
+    setDepartmentError('');
+    apiService.getSubWings(formData.wingId)
+      .then(response => { if (active) setDepartments(Array.isArray(response?.data) ? response.data : []); })
+      .catch(() => { if (active) setDepartmentError('Could not load departments for this wing.'); })
+      .finally(() => { if (active) setDepartmentLoading(false); });
+    return () => { active = false; };
+  }, [formData.wingId]);
+
   // Role definitions
   const roles = {
     super_admin: { name: 'Super Admin', icon: FaUserShield, color: 'purple' },
@@ -71,22 +101,6 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     volunteer: { name: 'Volunteer', icon: FiHeart, color: 'pink' },
     donor: { name: 'Donor', icon: FiAward, color: 'yellow' }
   };
-
-  // Departments
-  const departments = [
-    'Administration',
-    'Education',
-    'Healthcare',
-    'Women Empowerment',
-    'Environment',
-    'Fundraising',
-    'Communications',
-    'HR',
-    'Finance',
-    'Events',
-    'Field Operations',
-    'Volunteer Management'
-  ];
 
   // Interest options
   const interestOptions = [
@@ -112,6 +126,8 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
         password: '',
         role: user.role || 'member',
         department: user.department || '',
+        wingId: user.wingId || '',
+        departmentId: user.departmentId || '',
         status: user.status || 'active',
         location: user.location || '',
         bio: user.bio || '',
@@ -196,7 +212,7 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
     if (mode === 'view') return;
 
     // Validate required fields
-    if (!formData.name.trim() || !formData.email.trim() || !formData.role || !formData.department) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.role || !formData.wingId || !formData.departmentId || !departments.some(item => item.id === formData.departmentId)) {
       setActiveTab('basic');
       alert('Please fill in all required fields');
       return;
@@ -419,13 +435,26 @@ const UserPopup = ({ mode, user, onClose, onSave, busy = false, canAssignRoles =
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Wing <span className="text-red-500">*</span>
+                    </label>
+                    {isViewMode ? (
+                      <p className="text-gray-900">{wings.find(wing => wing.id === formData.wingId)?.name || 'Not assigned'}</p>
+                    ) : (
+                      <CommonSelect name="wingId" label="wing" value={formData.wingId || ''} onChange={value => setFormData(previous => ({ ...previous, wingId: value, departmentId: '', department: '' }))} options={[{ value: '', label: 'Select Wing' }, ...wings.map(wing => ({ value: wing.id, label: wing.name }))]} />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Department <span className="text-red-500">*</span>
                     </label>
                     {isViewMode ? (
                       <p className="text-gray-900">{formData.department || 'Not assigned'}</p>
                     ) : (
-                      <CommonSelect name="department" label="department" value={formData.department || ''} onChange={value => handleInputChange({ target: { name: 'department', value } })} options={[{ value: '', label: 'Select Department' }, ...departments]} />
+                      <CommonSelect name="departmentId" label="department" value={formData.departmentId || ''} disabled={!formData.wingId || departmentLoading || Boolean(departmentError)} onChange={value => setFormData(previous => ({ ...previous, departmentId: value, department: departments.find(item => item.id === value)?.name || '' }))} options={[{ value: '', label: departmentLoading ? 'Loading departments...' : 'Select Department' }, ...departments.map(item => ({ value: item.id, label: item.name }))]} />
                     )}
+                    {!isViewMode && departmentError && <p className="mt-1 text-xs text-red-600">{departmentError}</p>}
+                    {!isViewMode && formData.wingId && !departmentLoading && !departmentError && departments.length === 0 && <p className="mt-1 text-xs text-gray-500">No departments in this wing yet.</p>}
                   </div>
 
                   <div>

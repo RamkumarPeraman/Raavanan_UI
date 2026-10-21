@@ -66,6 +66,7 @@ const RolesManagementPage = () => {
     try {
       const permissions = [...new Set([
         ...draft.permissions,
+        ...(editing.role?.name === 'super_admin' ? Object.values(permissionGroups).flat() : []),
         'page:home',
         ...(draft.permissions.includes('page:my_groups') ? ['users:read'] : []),
         ...(draft.permissions.includes('page:roles') ? ['roles:read'] : []),
@@ -138,7 +139,9 @@ const RolesManagementPage = () => {
       (permission !== 'page:admin' || privileged)
       && (permission !== 'page:my_groups' || privileged || saved.includes('users:read'))
       && (permission !== 'page:roles' || privileged || saved.includes('roles:read')));
-    const permissions = saved.some(permission => permission.startsWith('page:')) ? saved : [...saved, ...legacyPages];
+    const permissions = role.name === 'super_admin'
+      ? [...saved, ...Object.values(permissionGroups).flat()]
+      : saved.some(permission => permission.startsWith('page:')) ? saved : [...saved, ...legacyPages];
     setDraft({ displayName: role.displayName || formatRoleName(role.name), description: role.description || '', permissions: [...new Set([...permissions, 'page:home'])] });
     setEditing({ mode: 'edit', role });
   };

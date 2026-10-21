@@ -858,6 +858,31 @@ const apiService = {
     }
   },
 
+  getWings: async () => {
+    try { return (await api.get('/wings')).data; } catch (error) { throwApiError(error); }
+  },
+  createWing: async (data) => {
+    try { return (await api.post('/wings', data)).data; } catch (error) { throwApiError(error); }
+  },
+  updateWing: async (id, data) => {
+    try { return (await api.put(`/wings/${id}`, data)).data; } catch (error) { throwApiError(error); }
+  },
+  deleteWing: async (id) => {
+    try { return (await api.delete(`/wings/${id}`)).data; } catch (error) { throwApiError(error); }
+  },
+  getSubWings: async (wingId) => {
+    try { return (await api.get(`/wings/${wingId}/sub-wings`)).data; } catch (error) { throwApiError(error); }
+  },
+  createSubWing: async (wingId, data) => {
+    try { return (await api.post(`/wings/${wingId}/sub-wings`, data)).data; } catch (error) { throwApiError(error); }
+  },
+  updateSubWing: async (id, data) => {
+    try { return (await api.put(`/wings/sub-wings/${id}`, data)).data; } catch (error) { throwApiError(error); }
+  },
+  deleteSubWing: async (id) => {
+    try { return (await api.delete(`/wings/sub-wings/${id}`)).data; } catch (error) { throwApiError(error); }
+  },
+
   getMerchandise: async () => {
     try {
       const response = await api.get('/merchandise');
