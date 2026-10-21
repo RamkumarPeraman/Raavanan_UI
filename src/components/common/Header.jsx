@@ -215,8 +215,8 @@ const Header = () => {
               <img src={ravanaLogo} alt="Raavana Thalaigal Trust logo" className="block h-full w-full object-cover" />
             </div>
             <span className="min-w-0 flex-1 leading-tight md:flex-none">
-              <span className={`block break-words font-bold text-white sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-[10px] leading-[1.15] sm:text-sm lg:text-base' : 'text-[10px] tracking-tight sm:text-base lg:text-lg'}`}>{label('Raavana Thalaigal')}</span>
-              <span className={`block break-words font-semibold text-[#EEC709] sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-[8px] leading-[1.15] sm:text-xs lg:text-sm' : 'text-[7px] uppercase tracking-[0.2em] sm:text-[10.4px] sm:tracking-[0.34em]'}`}>{label('Trust-TamilNadu')}</span>
+              <span className={`block break-words font-bold text-white sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-xs leading-[1.1] sm:text-sm lg:text-base' : 'text-[13px] leading-[1.1] tracking-tight min-[360px]:text-base lg:text-lg'}`}>{label('Raavana Thalaigal')}</span>
+              <span className={`block break-words font-semibold text-[#EEC709] sm:max-w-[13rem] sm:truncate lg:max-w-none ${language === 'ta' ? 'text-[10px] leading-[1.1] sm:text-xs lg:text-sm' : 'text-[9px] leading-[1.1] uppercase tracking-[0.12em] min-[360px]:text-[11px] min-[360px]:tracking-[0.08em] sm:text-[10.4px] sm:tracking-[0.34em]'}`}>{label('Trust-TamilNadu')}</span>
             </span>
           </Link>
 
